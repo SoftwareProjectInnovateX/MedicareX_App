@@ -1,98 +1,56 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, ImageBackground, ActivityIndicator, Image } from 'react-native';
+import { Redirect, useRouter } from 'expo-router';
+import { useAuth } from '../context/AuthContext';
+import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function Index() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
+  if (loading) {
     return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0D9488" />
+      </View>
     );
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
+  // If already logged in, skip the welcome screen
+  if (user) {
+    return <Redirect href="/(tabs)" />;
+  }
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <ImageBackground 
+      source={require('../../assets/images/welcome_bg.png')} 
+      className="flex-1 w-full h-full"
+      resizeMode="cover"
+    >
+      <SafeAreaView className="flex-1 justify-center px-8">
+        <View className="mt-[-100px]">
+          <View className="self-start mb-6">
+            <Text className="text-5xl font-extrabold text-black tracking-tight">MediCareX</Text>
+            <View className="h-1 bg-black w-[110%] mt-2" />
+          </View>
+          
+          <Text className="text-xl font-bold text-black leading-tight pr-8">
+            Order medicines safely, quickly, and at your doorstep.
+          </Text>
+        </View>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
+        {/* Start Button at bottom */}
+        <View className="absolute bottom-16 left-8 right-8 items-center">
+          <TouchableOpacity 
+            className="w-full max-w-[280px] bg-black rounded-[30px] h-16 flex-row items-center justify-center shadow-lg"
+            onPress={() => router.push('/(auth)/login')}
+          >
+            <Text className="text-white text-2xl font-bold mr-4">Start</Text>
+            <Feather name="chevron-right" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
-    </ThemedView>
+    </ImageBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});

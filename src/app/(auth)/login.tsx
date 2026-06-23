@@ -31,7 +31,7 @@ export default function LoginScreen() {
   return (
     <View className="flex-1 bg-white justify-center px-6">
       <View className="mb-10 items-center">
-        <Text className="text-3xl font-bold text-teal-600 mb-2">Welcome Back</Text>
+        <Text className="text-3xl font-bold text-accent mb-2">Welcome Back</Text>
         <Text className="text-gray-500 text-base text-center">
           Log in to MedicareX to manage your health and prescriptions
         </Text>
@@ -41,7 +41,7 @@ export default function LoginScreen() {
         <View className="flex-row items-center border border-gray-300 rounded-lg px-4 py-3 bg-gray-50">
           <Feather name="mail" color="#9ca3af" size={20} />
           <TextInput
-            className="flex-1 ml-3 text-base text-slate-800"
+            className="flex-1 ml-3 text-base text-textPrimary"
             placeholder="Email Address"
             value={email}
             onChangeText={setEmail}
@@ -53,7 +53,7 @@ export default function LoginScreen() {
         <View className="flex-row items-center border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 mt-4">
           <Feather name="lock" color="#9ca3af" size={20} />
           <TextInput
-            className="flex-1 ml-3 text-base text-slate-800"
+            className="flex-1 ml-3 text-base text-textPrimary"
             placeholder="Password"
             value={password}
             onChangeText={setPassword}
@@ -62,7 +62,7 @@ export default function LoginScreen() {
         </View>
 
         <TouchableOpacity 
-          className="bg-teal-600 rounded-lg py-4 mt-6 items-center flex-row justify-center"
+          className="bg-accent rounded-lg py-4 mt-6 items-center flex-row justify-center"
           onPress={handleLogin}
           disabled={isLoading}
         >
@@ -76,7 +76,7 @@ export default function LoginScreen() {
         <View className="flex-row justify-center mt-6">
           <Text className="text-gray-600">Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-            <Text className="text-teal-600 font-semibold">Sign Up</Text>
+            <Text className="text-accent font-semibold">Sign Up</Text>
           </TouchableOpacity>
         </View>
       </View>

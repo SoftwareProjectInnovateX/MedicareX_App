@@ -44,20 +44,20 @@ export default function ProductDetailScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-slate-50 items-center justify-center">
-        <ActivityIndicator size="large" color="#0D9488" />
+      <View className="flex-1 bg-primary items-center justify-center">
+        <ActivityIndicator size="large" color="#1a87e1" />
       </View>
     );
   }
 
   if (!product) {
     return (
-      <View className="flex-1 bg-slate-50 items-center justify-center px-6">
+      <View className="flex-1 bg-primary items-center justify-center px-6">
         <Feather name="alert-circle" size={48} color="#94A3B8" />
-        <Text className="text-xl font-bold text-slate-800 mt-4 text-center">Product Not Found</Text>
-        <Text className="text-slate-500 text-center mt-2">The product you are looking for does not exist.</Text>
+        <Text className="text-xl font-bold text-textPrimary mt-4 text-center">Product Not Found</Text>
+        <Text className="text-textSecondary text-center mt-2">The product you are looking for does not exist.</Text>
         <TouchableOpacity 
-          className="mt-8 bg-teal-600 px-6 py-3 rounded-full"
+          className="mt-8 bg-accent px-6 py-3 rounded-full"
           onPress={() => router.back()}
         >
           <Text className="text-white font-bold">Go Back</Text>
@@ -69,7 +69,7 @@ export default function ProductDetailScreen() {
   const price = product.retailPrice || product.price;
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1 bg-primary">
       {/* Header */}
       <View className="absolute top-0 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
         <TouchableOpacity 
@@ -103,8 +103,8 @@ export default function ProductDetailScreen() {
         {/* Product Info */}
         <View className="px-6 py-8">
           <View className="flex-row items-center mb-3">
-            <View className="bg-teal-100 px-3 py-1 rounded-full">
-              <Text className="text-teal-800 text-xs font-bold">{product.category || 'Medicine'}</Text>
+            <View className="bg-accentLight px-3 py-1 rounded-full">
+              <Text className="text-textPrimary text-xs font-bold">{product.category || 'Medicine'}</Text>
             </View>
             {product.prescriptionRequired && (
               <View className="bg-orange-100 px-3 py-1 rounded-full ml-2 flex-row items-center">
@@ -114,26 +114,26 @@ export default function ProductDetailScreen() {
             )}
           </View>
 
-          <Text className="text-3xl font-extrabold text-slate-800 mb-2 leading-tight">{product.name}</Text>
+          <Text className="text-3xl font-extrabold text-textPrimary mb-2 leading-tight">{product.name}</Text>
           
-          <Text className="text-2xl font-bold text-teal-600 mb-6">Rs. {price}</Text>
+          <Text className="text-2xl font-bold text-accent mb-6">Rs. {price}</Text>
 
           <View className="mb-6">
-            <Text className="text-lg font-bold text-slate-800 mb-2">Description</Text>
-            <Text className="text-slate-600 leading-relaxed text-base">
+            <Text className="text-lg font-bold text-textPrimary mb-2">Description</Text>
+            <Text className="text-textSecondary leading-relaxed text-base">
               {product.description || 'No description available for this product.'}
             </Text>
           </View>
 
           {/* Supplier Info if available */}
           {product.supplierId && (
-            <View className="flex-row items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6">
-              <View className="w-12 h-12 bg-teal-50 rounded-full items-center justify-center mr-4">
-                <Feather name="truck" color="#0D9488" size={20} />
+            <View className="flex-row items-center bg-white p-4 rounded-2xl shadow-sm border border-[#e5e7eb] mb-6">
+              <View className="w-12 h-12 bg-primary rounded-full items-center justify-center mr-4">
+                <Feather name="truck" color="#1a87e1" size={20} />
               </View>
               <View>
-                <Text className="text-sm text-slate-500 font-medium">Supplier Code</Text>
-                <Text className="text-base font-bold text-slate-800">{product.supplierId}</Text>
+                <Text className="text-sm text-textSecondary font-medium">Supplier Code</Text>
+                <Text className="text-base font-bold text-textPrimary">{product.supplierId}</Text>
               </View>
             </View>
           )}
@@ -141,7 +141,7 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View className="bg-white px-6 py-6 border-t border-slate-100 flex-row items-center justify-between">
+      <View className="bg-white px-6 py-6 border-t border-[#e5e7eb] flex-row items-center justify-between">
         <View className="flex-row items-center bg-slate-100 rounded-full p-1">
           <TouchableOpacity 
             className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm"
@@ -149,7 +149,7 @@ export default function ProductDetailScreen() {
           >
             <Feather name="minus" color="#1E293B" size={20} />
           </TouchableOpacity>
-          <Text className="w-10 text-center font-bold text-lg text-slate-800">{qty}</Text>
+          <Text className="w-10 text-center font-bold text-lg text-textPrimary">{qty}</Text>
           <TouchableOpacity 
             className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm"
             onPress={() => setQty(prev => prev + 1)}
@@ -159,7 +159,7 @@ export default function ProductDetailScreen() {
         </View>
 
         <TouchableOpacity 
-          className="flex-1 ml-6 bg-teal-600 h-14 rounded-full flex-row items-center justify-center shadow-md shadow-teal-600/30"
+          className="flex-1 ml-6 bg-accent h-14 rounded-full flex-row items-center justify-center shadow-md shadow-accent/30"
           onPress={() => {
             // Need to pass the custom qty
             const cartItem = { ...product, qty };

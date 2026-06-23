@@ -17,12 +17,12 @@ export default function CartScreen() {
   const totalAmount = items.reduce((sum, item) => sum + (item.retailPrice || item.price) * item.qty, 0);
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1 bg-primary">
       {/* Header */}
-      <View className="px-6 pt-14 pb-4 bg-white shadow-sm border-b border-slate-100 flex-row justify-between items-center">
-        <Text className="text-2xl font-bold text-slate-800">My Cart</Text>
-        <View className="bg-teal-50 px-3 py-1 rounded-full">
-          <Text className="text-teal-700 font-bold">{items.length} Items</Text>
+      <View className="px-6 pt-14 pb-4 bg-white shadow-sm border-b border-[#e5e7eb] flex-row justify-between items-center">
+        <Text className="text-2xl font-bold text-textPrimary">My Cart</Text>
+        <View className="bg-primary px-3 py-1 rounded-full">
+          <Text className="text-accent font-bold">{items.length} Items</Text>
         </View>
       </View>
 
@@ -32,10 +32,10 @@ export default function CartScreen() {
             <View className="w-24 h-24 bg-slate-100 rounded-full items-center justify-center mb-6">
               <Text className="text-4xl">🛒</Text>
             </View>
-            <Text className="text-xl font-bold text-slate-800 mb-2">Your cart is empty</Text>
-            <Text className="text-slate-500 text-center mb-8">Looks like you haven't added any items to your cart yet.</Text>
+            <Text className="text-xl font-bold text-textPrimary mb-2">Your cart is empty</Text>
+            <Text className="text-textSecondary text-center mb-8">Looks like you haven't added any items to your cart yet.</Text>
             <TouchableOpacity 
-              className="bg-teal-600 px-8 py-4 rounded-full"
+              className="bg-accent px-8 py-4 rounded-full"
               onPress={() => router.push('/products')}
             >
               <Text className="text-white font-bold text-base">Start Shopping</Text>
@@ -44,8 +44,8 @@ export default function CartScreen() {
         ) : (
           <View className="pb-8">
             {items.map((item) => (
-              <View key={item.id} className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-slate-100 flex-row items-center">
-                <View className="w-20 h-20 bg-slate-50 rounded-xl items-center justify-center mr-4">
+              <View key={item.id} className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-[#e5e7eb] flex-row items-center">
+                <View className="w-20 h-20 bg-primary rounded-xl items-center justify-center mr-4">
                   {item.imageUrl ? (
                     <Image source={{ uri: formatImageUrl(item.imageUrl) }} className="w-16 h-16" resizeMode="contain" />
                   ) : (
@@ -54,11 +54,11 @@ export default function CartScreen() {
                 </View>
                 
                 <View className="flex-1">
-                  <Text className="font-bold text-slate-800 mb-1">{item.name}</Text>
-                  <Text className="text-teal-600 font-bold mb-3">Rs. {item.retailPrice || item.price}</Text>
+                  <Text className="font-bold text-textPrimary mb-1">{item.name}</Text>
+                  <Text className="text-accent font-bold mb-3">Rs. {item.retailPrice || item.price}</Text>
                   
                   <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center bg-slate-50 rounded-lg">
+                    <View className="flex-row items-center bg-primary rounded-lg">
                       <TouchableOpacity 
                         className="w-8 h-8 items-center justify-center"
                         onPress={() => {
@@ -67,12 +67,12 @@ export default function CartScreen() {
                       >
                         <Feather name="minus" color="#64748B" size={16} />
                       </TouchableOpacity>
-                      <Text className="font-bold text-slate-800 px-2">{item.qty}</Text>
+                      <Text className="font-bold text-textPrimary px-2">{item.qty}</Text>
                       <TouchableOpacity 
                         className="w-8 h-8 items-center justify-center"
                         onPress={() => updateQuantity(item.id, item.qty + 1)}
                       >
-                        <Feather name="plus" color="#0D9488" size={16} />
+                        <Feather name="plus" color="#1a87e1" size={16} />
                       </TouchableOpacity>
                     </View>
                     
@@ -92,13 +92,13 @@ export default function CartScreen() {
 
       {/* Checkout Bar */}
       {items.length > 0 && (
-        <View className="bg-white px-6 py-6 border-t border-slate-100 shadow-lg">
+        <View className="bg-white px-6 py-6 border-t border-[#e5e7eb] shadow-lg">
           <View className="flex-row justify-between mb-4">
-            <Text className="text-slate-500 font-medium text-base">Total Amount</Text>
-            <Text className="text-2xl font-bold text-teal-600">Rs. {totalAmount.toFixed(2)}</Text>
+            <Text className="text-textSecondary font-medium text-base">Total Amount</Text>
+            <Text className="text-2xl font-bold text-accent">Rs. {totalAmount.toFixed(2)}</Text>
           </View>
           <TouchableOpacity 
-            className="bg-teal-600 rounded-2xl py-4 flex-row justify-center items-center"
+            className="bg-accent rounded-2xl py-4 flex-row justify-center items-center"
             onPress={() => console.log("Proceed to checkout")}
           >
             <Text className="text-white font-bold text-lg mr-2">Proceed to Checkout</Text>

@@ -1,0 +1,15 @@
+export const CATEGORIES = [
+  { id: "medicine", name: "Medicines", icon: "💊", vectorIcon: "pill" },
+  { id: "skincare", name: "Skin Care", icon: "✨", vectorIcon: "lotion" },
+  { id: "baby", name: "Baby Care", icon: "👶", vectorIcon: "baby-carriage" },
+  { id: "vitamins", name: "Vitamins", icon: "🧃", vectorIcon: "bottle-tonic-plus" },
+  { id: "pain-relief", name: "Pain Relief", icon: "💉", vectorIcon: "medical-bag" },
+  { id: "antibiotics", name: "Antibiotics", icon: "🧪", vectorIcon: "test-tube" },
+  { id: "first-aid", name: "First Aid", icon: "🩹", vectorIcon: "bandage" },
+  { id: "heart", name: "Heart Health", icon: "❤️", vectorIcon: "heart-pulse" },
+  { id: "eye-care", name: "Eye Care", icon: "👁️", vectorIcon: "eye" },
+  { id: "dental", name: "Dental Care", icon: "🦷", vectorIcon: "tooth" },
+  { id: "herbal", name: "Herbal Products", icon: "🌿", vectorIcon: "leaf" },
+  { id: "baby-mother", name: "Mother & Baby", icon: "🤱", vectorIcon: "human-pregnant" },
+  { id: "other", name: "Other", icon: "📦", vectorIcon: "package-variant" },
+];

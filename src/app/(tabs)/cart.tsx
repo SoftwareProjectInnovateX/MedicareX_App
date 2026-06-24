@@ -11,7 +11,7 @@ export default function CartScreen() {
   // Helper for physical device localhost image resolution
   const formatImageUrl = (url?: string) => {
     if (!url) return undefined;
-    return url.replace('localhost', '10.160.86.9').replace('127.0.0.1', '10.160.86.9');
+    return url.replace('localhost', '10.207.127.9').replace('127.0.0.1', '10.207.127.9');
   };
 
   const totalAmount = items.reduce((sum, item) => sum + (item.retailPrice || item.price) * item.qty, 0);
@@ -99,7 +99,7 @@ export default function CartScreen() {
           </View>
           <TouchableOpacity 
             className="bg-accent rounded-2xl py-4 flex-row justify-center items-center"
-            onPress={() => console.log("Proceed to checkout")}
+            onPress={() => router.push('/checkout')}
           >
             <Text className="text-white font-bold text-lg mr-2">Proceed to Checkout</Text>
             <Feather name="arrow-right" color="#ffffff" size={20} />

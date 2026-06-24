@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
 import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 
-const API_BASE = 'http://10.132.249.9:5000/api/customer-orders';
+
 
 const OrderCard = ({ order }: { order: any }) => (
   <View className="bg-white rounded-2xl p-4 mb-4 border border-[#e5e7eb] shadow-sm">
@@ -82,45 +82,38 @@ export default function OrdersScreen() {
 
     let unsubPres = () => {};
 
-    const fetchOrders = async () => {
-      try {
-        const token = await user.getIdToken();
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const qOrders = query(
+      collection(db, 'orders'),
+      where('userId', '==', user.uid)
+    );
 
-        const res = await fetch(API_BASE, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        const tagged = data.map((d: any) => ({
-          ...d,
-          type: 'regular',
-          orderStatus: d.orderStatus || 'pending',
-        }));
-        setOrders(tagged);
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          console.log('Failed to fetch orders:', err.message);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
+    const unsubOrders = onSnapshot(qOrders, (snap) => {
+      let allOrders = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+        type: 'regular',
+        orderStatus: d.data().orderStatus || 'pending',
+      }));
+      // Sort in memory to avoid requiring a composite index
+      allOrders.sort((a: any, b: any) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
+      setOrders(allOrders);
+      setLoading(false);
+    }, (err) => {
+      console.error('Failed to fetch orders from firestore:', err);
+      setLoading(false);
+    });
 
     const qPres = query(
       collection(db, 'prescriptions'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.uid)
     );
 
     unsubPres = onSnapshot(qPres, (snap) => {
-      const all = snap.docs.map(d => {
+      let all = snap.docs.map(d => {
         const p = d.data();
         return {
           id: d.id,
@@ -141,10 +134,19 @@ export default function OrdersScreen() {
           createdAt: p.createdAt,
         };
       });
+      // Sort in memory to avoid requiring a composite index
+      all.sort((a: any, b: any) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
       setPrescriptions(all);
     });
 
-    return () => { unsubPres(); };
+    return () => { 
+      unsubPres(); 
+      unsubOrders();
+    };
   }, [user]);
 
   const prescriptionIds = new Set(prescriptions.map(p => p.id));

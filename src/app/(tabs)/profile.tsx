@@ -27,11 +27,11 @@ export default function ProfileScreen() {
   }
 
   const menuItems = [
-    { icon: <Feather name="clock" color="#1a87e1" size={24} />, title: 'Order History', subtitle: 'Track your recent orders' },
-    { icon: <Feather name="file-text" color="#1a87e1" size={24} />, title: 'My Prescriptions', subtitle: 'Manage uploaded prescriptions' },
-    { icon: <Feather name="heart" color="#1a87e1" size={24} />, title: 'Saved Items', subtitle: 'View your wishlist' },
-    { icon: <Feather name="settings" color="#1a87e1" size={24} />, title: 'Settings', subtitle: 'Notifications, password, etc.' },
-    { icon: <Feather name="help-circle" color="#1a87e1" size={24} />, title: 'Help & Support', subtitle: 'Contact us or view FAQs' },
+    { icon: <Feather name="clock" color="#1a87e1" size={24} />, title: 'Order History', subtitle: 'Track your recent orders', route: '/orders' },
+    { icon: <Feather name="file-text" color="#1a87e1" size={24} />, title: 'My Prescriptions', subtitle: 'Manage uploaded prescriptions', route: '/prescription' },
+    { icon: <Feather name="heart" color="#1a87e1" size={24} />, title: 'Saved Items', subtitle: 'View your wishlist', route: null },
+    { icon: <Feather name="settings" color="#1a87e1" size={24} />, title: 'Settings', subtitle: 'Notifications, password, etc.', route: '/settings' },
+    { icon: <Feather name="help-circle" color="#1a87e1" size={24} />, title: 'Help & Support', subtitle: 'Contact us or view FAQs', route: null },
   ];
 
   return (
@@ -45,7 +45,7 @@ export default function ProfileScreen() {
           <View className="ml-4 flex-1">
             <Text className="text-2xl font-bold text-white mb-1">{user.fullName || 'Valued Customer'}</Text>
             <Text className="text-accentLight font-medium">{user.email}</Text>
-            <TouchableOpacity className="mt-2 bg-primary0 self-start px-3 py-1 rounded-full">
+            <TouchableOpacity className="mt-2 bg-primary0 self-start px-3 py-1 rounded-full" onPress={() => router.push('/settings')}>
               <Text className="text-white text-xs font-semibold">Edit Profile</Text>
             </TouchableOpacity>
           </View>
@@ -73,6 +73,7 @@ export default function ProfileScreen() {
             <TouchableOpacity 
               key={index}
               className={`flex-row items-center p-4 ${index !== menuItems.length - 1 ? 'border-b border-[#e5e7eb]' : ''}`}
+              onPress={() => item.route && router.push(item.route as any)}
             >
               <View className="w-12 h-12 bg-primary rounded-xl items-center justify-center mr-4">
                 {item.icon}

@@ -3,6 +3,7 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/auth";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 // Your Firebase config from mediFront
 const firebaseConfig = {
@@ -21,12 +22,17 @@ export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 // Initialize services
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
 let firebaseAuth;
-try {
-  firebaseAuth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
-  });
-} catch (error) {
+if (Platform.OS === 'web') {
   firebaseAuth = getAuth(app);
+} else {
+  try {
+    firebaseAuth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage)
+    });
+  } catch (error) {
+    firebaseAuth = getAuth(app);
+  }
 }
 export const auth = firebaseAuth;

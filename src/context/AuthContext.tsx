@@ -177,44 +177,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("AuthContext useEffect running...");
     const unsubscribe = onAuthStateChanged(auth, async (authenticatedUser) => {
       console.log("onAuthStateChanged fired! User:", authenticatedUser?.uid);
-      if (authenticatedUser) {
-        setUser(authenticatedUser);
-        setCurrentUser(authenticatedUser);
-        
-        const storedRole = await AsyncStorage.getItem('userRole');
-        if (storedRole === 'customer') {
-          setUserRole(storedRole);
-          setLoading(false);
-          return;
-        }
-        
-        try {
-          const userDoc = await getDoc(doc(db, 'users', authenticatedUser.uid));
-          if (userDoc.exists() && userDoc.data().role === 'customer') {
-            const userData = userDoc.data();
-            setUserRole('customer');
-            await AsyncStorage.setItem('userId', authenticatedUser.uid);
-            await AsyncStorage.setItem('userRole', 'customer');
-            await AsyncStorage.setItem('userName', userData.fullName);
-            await AsyncStorage.setItem('userEmail', userData.email);
-          } else {
-             await signOut(auth);
-             setUser(null);
-             setCurrentUser(null);
-             setUserRole(null);
+      try {
+        if (authenticatedUser) {
+          setUser(authenticatedUser);
+          setCurrentUser(authenticatedUser);
+          
+          const storedRole = await AsyncStorage.getItem('userRole');
+          if (storedRole === 'customer') {
+            setUserRole(storedRole);
+            setLoading(false);
+            return;
           }
-        } catch (error) {
-          console.error('Error fetching user role:', error);
+          
+          try {
+            const userDoc = await getDoc(doc(db, 'users', authenticatedUser.uid));
+            if (userDoc.exists() && userDoc.data().role === 'customer') {
+              const userData = userDoc.data();
+              setUserRole('customer');
+              await AsyncStorage.setItem('userId', authenticatedUser.uid);
+              await AsyncStorage.setItem('userRole', 'customer');
+              await AsyncStorage.setItem('userName', userData.fullName);
+              await AsyncStorage.setItem('userEmail', userData.email);
+            } else {
+               await signOut(auth);
+               setUser(null);
+               setCurrentUser(null);
+               setUserRole(null);
+            }
+          } catch (error) {
+            console.error('Error fetching user role:', error);
+          }
+        } else {
+          setUser(null);
+          setCurrentUser(null);
+          setUserRole(null);
+          AsyncStorage.clear().catch(err => console.error('Error clearing storage:', err));
         }
-      } else {
-        setUser(null);
-        setCurrentUser(null);
-        setUserRole(null);
-        await AsyncStorage.clear();
+      } catch (err) {
+        console.error("Error in onAuthStateChanged wrapper:", err);
+      } finally {
+        console.log("Setting loading to false...");
+        setLoading(false);
       }
-      
-      console.log("Setting loading to false...");
-      setLoading(false);
     });
 
     return () => unsubscribe();

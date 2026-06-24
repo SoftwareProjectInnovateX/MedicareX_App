@@ -5,6 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { Feather } from '@expo/vector-icons';
 import { useCartStore } from '../../stores/cartStore';
+import { CATEGORIES } from '../../constants/categories';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -17,7 +18,7 @@ export default function ProductDetailScreen() {
   // Helper for physical device localhost image resolution
   const formatImageUrl = (url?: string) => {
     if (!url) return undefined;
-    return url.replace('localhost', '10.160.86.9').replace('127.0.0.1', '10.160.86.9');
+    return url.replace('localhost', '10.207.127.9').replace('127.0.0.1', '10.207.127.9');
   };
 
   useEffect(() => {
@@ -104,7 +105,9 @@ export default function ProductDetailScreen() {
         <View className="px-6 py-8">
           <View className="flex-row items-center mb-3">
             <View className="bg-accentLight px-3 py-1 rounded-full">
-              <Text className="text-textPrimary text-xs font-bold">{product.category || 'Medicine'}</Text>
+              <Text className="text-textPrimary text-xs font-bold">
+                {CATEGORIES.find(c => c.id === product.category)?.name || product.category || 'Medicine'}
+              </Text>
             </View>
             {product.prescriptionRequired && (
               <View className="bg-orange-100 px-3 py-1 rounded-full ml-2 flex-row items-center">
@@ -114,7 +117,7 @@ export default function ProductDetailScreen() {
             )}
           </View>
 
-          <Text className="text-3xl font-extrabold text-textPrimary mb-2 leading-tight">{product.name}</Text>
+          <Text className="text-3xl font-extrabold text-textPrimary mb-2 leading-tight">{product.name || product.productName}</Text>
           
           <Text className="text-2xl font-bold text-accent mb-6">Rs. {price}</Text>
 

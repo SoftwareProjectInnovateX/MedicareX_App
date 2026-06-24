@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Linking } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,18 +7,21 @@ import { collection, getDocs, query, limit } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
 import { useLocationStore } from '../../stores/locationStore';
+import { CATEGORIES } from '../../constants/categories';
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showAllProducts, setShowAllProducts] = useState(false);
   const { address } = useLocationStore();
   
   // Helper for physical device localhost image resolution
   const formatImageUrl = (url?: string) => {
     if (!url) return undefined;
-    return url.replace('localhost', '10.132.249.9').replace('127.0.0.1', '10.132.249.9');
+    return url.replace('localhost', '10.207.127.9').replace('127.0.0.1', '10.207.127.9');
   };
   
   const cartItems = useCartStore(state => state.items);
@@ -34,7 +37,8 @@ export default function HomeScreen() {
 
   const fetchProducts = async () => {
     try {
-      const q = query(collection(db, 'adminProducts'), limit(6));
+      // Fetch up to 20 products for the popular section instead of strictly 6
+      const q = query(collection(db, 'adminProducts'), limit(20));
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(items);
@@ -44,13 +48,6 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
-
-  const categories = [
-    { name: 'Medicines', icon: <MaterialCommunityIcons name="pill" size={32} color="#1a87e1" /> },
-    { name: 'Wellness', icon: <MaterialCommunityIcons name="leaf" size={32} color="#1a87e1" /> },
-    { name: 'Devices', icon: <MaterialCommunityIcons name="stethoscope" size={32} color="#1a87e1" /> },
-    { name: 'Personal Care', icon: <MaterialCommunityIcons name="bottle-tonic-plus" size={32} color="#1a87e1" /> },
-  ];
 
   return (
     <View className="flex-1 bg-primary">
@@ -170,28 +167,54 @@ export default function HomeScreen() {
           <View className="mb-8">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-xl font-bold text-textPrimary">Categories</Text>
-              <TouchableOpacity>
-                <Text className="text-accent font-semibold">See All</Text>
+              <TouchableOpacity onPress={() => setShowAllCategories(!showAllCategories)}>
+                <Text className="text-accent font-semibold">{showAllCategories ? 'See Less' : 'See All'}</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="overflow-visible">
-              {categories.map((cat, index) => (
-                <TouchableOpacity key={index} className="items-center mr-6">
-                  <View className="w-16 h-16 bg-white rounded-full items-center justify-center shadow-sm border border-[#e5e7eb] mb-2">
-                    {cat.icon}
-                  </View>
-                  <Text className="text-xs text-textSecondary font-medium">{cat.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            
+            {showAllCategories ? (
+              <View className="flex-row flex-wrap justify-between">
+                {CATEGORIES.map((cat, index) => (
+                  <TouchableOpacity 
+                    key={index} 
+                    className="items-center mb-4 w-[22%]"
+                    onPress={() => router.push(`/products?category=${cat.id}`)}
+                  >
+                    <View className="w-16 h-16 bg-white rounded-full items-center justify-center shadow-sm border border-[#e5e7eb] mb-2">
+                      <MaterialCommunityIcons name={cat.vectorIcon as any} size={32} color="#1a87e1" />
+                    </View>
+                    <Text className="text-xs text-textSecondary font-medium text-center" numberOfLines={1}>{cat.name}</Text>
+                  </TouchableOpacity>
+                ))}
+                {/* Add invisible placeholders to keep left-alignment if the last row isn't full */}
+                {Array.from({ length: (4 - (CATEGORIES.length % 4)) % 4 }).map((_, i) => (
+                  <View key={`placeholder-${i}`} className="w-[22%]" />
+                ))}
+              </View>
+            ) : (
+              <View className="flex-row justify-between">
+                {CATEGORIES.slice(0, 4).map((cat, index) => (
+                  <TouchableOpacity 
+                    key={index} 
+                    className="items-center w-[22%]"
+                    onPress={() => router.push(`/products?category=${cat.id}`)}
+                  >
+                    <View className="w-16 h-16 bg-white rounded-full items-center justify-center shadow-sm border border-[#e5e7eb] mb-2">
+                      <MaterialCommunityIcons name={cat.vectorIcon as any} size={32} color="#1a87e1" />
+                    </View>
+                    <Text className="text-xs text-textSecondary font-medium text-center" numberOfLines={1}>{cat.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Popular Products */}
           <View className="mb-8">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-xl font-bold text-textPrimary">Popular Products</Text>
-              <TouchableOpacity onPress={() => router.push('/products')}>
-                <Text className="text-accent font-semibold">See All</Text>
+              <TouchableOpacity onPress={() => setShowAllProducts(!showAllProducts)}>
+                <Text className="text-accent font-semibold">{showAllProducts ? 'See Less' : 'See All'}</Text>
               </TouchableOpacity>
             </View>
 
@@ -199,7 +222,7 @@ export default function HomeScreen() {
               <ActivityIndicator color="#1a87e1" size="large" className="mt-8" />
             ) : (
               <View className="flex-row flex-wrap justify-between">
-                {products.map((product) => (
+                {products.slice(0, showAllProducts ? products.length : 4).map((product) => (
                   <TouchableOpacity 
                     key={product.id} 
                     className="w-[48%] bg-white rounded-2xl p-4 mb-4 shadow-sm border border-[#e5e7eb]"
@@ -209,11 +232,13 @@ export default function HomeScreen() {
                       {product.imageUrl ? (
                         <Image source={{ uri: formatImageUrl(product.imageUrl) }} className="w-full h-full" resizeMode="contain" />
                       ) : (
-                        <Feather name="package" size={48} color="#94A3B8" />
+                        <MaterialCommunityIcons name={CATEGORIES.find(c => c.id === product.category)?.vectorIcon as any || "pill"} size={48} color="#1a87e1" />
                       )}
                     </View>
-                    <Text className="font-bold text-textPrimary mb-1" numberOfLines={1}>{product.name}</Text>
-                    <Text className="text-xs text-textSecondary mb-2" numberOfLines={1}>{product.category}</Text>
+                    <Text className="font-bold text-textPrimary mb-1" numberOfLines={1}>{product.name || product.productName}</Text>
+                    <Text className="text-xs text-textSecondary mb-2" numberOfLines={1}>
+                      {CATEGORIES.find(c => c.id === product.category)?.name || product.category}
+                    </Text>
                     
                     <View className="flex-row justify-between items-center mt-auto">
                       <Text className="text-accent font-bold text-lg">Rs. {product.retailPrice || product.price}</Text>
@@ -232,76 +257,125 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Footer Section */}
-        <View className="bg-[#0f2a5e] pt-10 pb-24 px-8 mt-4 rounded-t-[40px]">
+        {/* Footer Section - Premium Look */}
+        <View className="bg-[#0b1e42] pt-10 pb-14 px-6 mt-6 rounded-t-[40px] shadow-lg">
+          {/* Logo & Tagline */}
           <View className="items-center mb-8">
-            <View className="bg-white/10 p-4 rounded-full mb-4">
-              <MaterialCommunityIcons name="shield-plus" color="#ffffff" size={32} />
+            <View className="flex-row items-center justify-center bg-[#1a87e1]/20 px-5 py-2 rounded-full mb-4 border border-[#1a87e1]/30">
+              <MaterialCommunityIcons name="shield-plus" color="#38bdf8" size={24} />
+              <Text className="text-2xl font-bold text-white ml-2 tracking-wide">Medicare<Text className="text-[#38bdf8]">X</Text></Text>
             </View>
-            <Text className="text-2xl font-bold text-white mb-2">MedicareX</Text>
-            <Text className="text-accentLight text-center px-4 leading-relaxed">
-              Your trusted online pharmacy for total healthcare. Delivering excellence in medicines and personal care to the community.
+            <Text className="text-gray-400 text-center px-4 text-xs leading-relaxed">
+              Experience the future of healthcare with our premium online pharmacy. Quality medicines, delivered with care.
             </Text>
           </View>
 
-          <View className="space-y-4 mb-10">
-            <Text className="text-white font-bold text-lg mb-2">Quick Links</Text>
-            {['About Us', 'Upload Prescription', 'Terms & Conditions', 'Privacy Policy'].map((link, idx) => (
-              <TouchableOpacity key={idx} className="flex-row items-center border-b border-textPrimary/50 pb-3">
-                <Feather name="chevron-right" color="#ffffff" size={16} />
-                <Text className="text-accentLight ml-3 text-base">{link}</Text>
-              </TouchableOpacity>
-            ))}
+          {/* Quick Links */}
+          <View className="mb-8">
+            <Text className="text-white font-bold text-sm mb-4 tracking-wider uppercase opacity-80">Quick Links</Text>
+            <View className="flex-row flex-wrap justify-between">
+              {[
+                { label: 'Shop Products', route: '/products' },
+                { label: 'Upload Prescription', route: '/prescription' },
+                { label: 'Settings', route: '/settings' },
+                { label: 'My Cart', route: '/cart' }
+              ].map((link, idx) => (
+                <TouchableOpacity 
+                  key={idx} 
+                  className="w-[48%] flex-row items-center bg-white/5 rounded-2xl p-3 mb-3 border border-white/10"
+                  onPress={() => router.push(link.route as any)}
+                >
+                  <View className="bg-[#1a87e1]/20 p-1.5 rounded-lg mr-2">
+                    <Feather name="chevron-right" color="#38bdf8" size={14} />
+                  </View>
+                  <Text className="text-gray-300 text-xs font-semibold">{link.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
-          <View className="space-y-4 mb-10">
-            <Text className="text-white font-bold text-lg mb-2">Contact Us</Text>
+          {/* Contact Us Interactive */}
+          <View className="mb-8 bg-gradient-to-r from-white/10 to-transparent rounded-3xl p-5 border border-white/5">
+            <Text className="text-white font-bold text-sm mb-4 tracking-wider uppercase opacity-80">Get in Touch</Text>
             
-            <View className="flex-row items-start mb-3">
-              <View className="bg-textPrimary p-2 rounded-lg mr-4">
-                <Feather name="phone" color="#ffffff" size={20} />
+            <TouchableOpacity 
+              className="flex-row items-center mb-4"
+              onPress={() => Linking.openURL('tel:+94112345678')}
+            >
+              <View className="w-10 h-10 rounded-full bg-[#1a87e1]/20 items-center justify-center mr-4 border border-[#1a87e1]/30">
+                <Feather name="phone-call" color="#38bdf8" size={16} />
               </View>
               <View>
-                <Text className="text-accentLight text-sm">Call Us</Text>
-                <Text className="text-white font-bold text-base mt-1">+94 112 345 678</Text>
+                <Text className="text-gray-400 text-[10px] uppercase tracking-wider mb-0.5">Call Support</Text>
+                <Text className="text-white font-semibold text-sm">+94 112 345 678</Text>
               </View>
-            </View>
+            </TouchableOpacity>
 
-            <View className="flex-row items-start mb-3">
-              <View className="bg-textPrimary p-2 rounded-lg mr-4">
-                <Feather name="mail" color="#ffffff" size={20} />
+            <TouchableOpacity 
+              className="flex-row items-center mb-4"
+              onPress={() => Linking.openURL('mailto:care@medicarex.lk')}
+            >
+              <View className="w-10 h-10 rounded-full bg-[#1a87e1]/20 items-center justify-center mr-4 border border-[#1a87e1]/30">
+                <Feather name="mail" color="#38bdf8" size={16} />
               </View>
               <View>
-                <Text className="text-accentLight text-sm">Email</Text>
-                <Text className="text-white font-bold text-base mt-1">care@medicarex.lk</Text>
+                <Text className="text-gray-400 text-[10px] uppercase tracking-wider mb-0.5">Email Us</Text>
+                <Text className="text-white font-semibold text-sm">care@medicarex.lk</Text>
               </View>
-            </View>
-
-            <View className="flex-row items-start">
-              <View className="bg-textPrimary p-2 rounded-lg mr-4">
-                <Feather name="map-pin" color="#ffffff" size={20} />
-              </View>
-              <View className="flex-1">
-                <Text className="text-accentLight text-sm">Location</Text>
-                <Text className="text-white font-bold text-base mt-1 leading-snug">No 123, Galle Road, Colombo 03, Sri Lanka</Text>
-              </View>
-            </View>
-          </View>
-
-          <View className="flex-row justify-center space-x-6 mb-8 border-t border-textPrimary pt-8">
-            <TouchableOpacity className="bg-textPrimary p-3 rounded-full mr-4">
-              <MaterialCommunityIcons name="facebook" color="#ffffff" size={24} />
             </TouchableOpacity>
-            <TouchableOpacity className="bg-textPrimary p-3 rounded-full">
-              <MaterialCommunityIcons name="instagram" color="#ffffff" size={24} />
+
+            <TouchableOpacity 
+              className="flex-row items-center"
+              onPress={() => Linking.openURL('https://maps.google.com/?q=Colombo+03')}
+            >
+              <View className="w-10 h-10 rounded-full bg-[#1a87e1]/20 items-center justify-center mr-4 border border-[#1a87e1]/30">
+                <Feather name="map-pin" color="#38bdf8" size={16} />
+              </View>
+              <View>
+                <Text className="text-gray-400 text-[10px] uppercase tracking-wider mb-0.5">Headquarters</Text>
+                <Text className="text-white font-semibold text-sm">Colombo 03, Sri Lanka</Text>
+              </View>
             </TouchableOpacity>
           </View>
 
-          <Text className="text-accent text-center text-xs">
-            © {new Date().getFullYear()} MedicareX Pharmacy. All rights reserved.
+          {/* Socials & Copyright */}
+          <View className="flex-row justify-center items-center space-x-8 mb-8 border-t border-white/10 pt-8">
+            <TouchableOpacity 
+              className="w-12 h-12 bg-white/5 rounded-full items-center justify-center border border-white/10"
+              onPress={() => Linking.openURL('https://facebook.com')}
+            >
+              <MaterialCommunityIcons name="facebook" color="#38bdf8" size={22} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className="w-12 h-12 bg-white/5 rounded-full items-center justify-center border border-white/10 mx-6"
+              onPress={() => Linking.openURL('https://instagram.com')}
+            >
+              <MaterialCommunityIcons name="instagram" color="#38bdf8" size={22} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className="w-12 h-12 bg-white/5 rounded-full items-center justify-center border border-white/10"
+              onPress={() => Linking.openURL('https://twitter.com')}
+            >
+              <MaterialCommunityIcons name="twitter" color="#38bdf8" size={22} />
+            </TouchableOpacity>
+          </View>
+          
+          <Text className="text-center text-[10px] text-gray-500 tracking-widest uppercase">
+            © {new Date().getFullYear()} MedicareX. All rights reserved.
           </Text>
         </View>
       </ScrollView>
+      {/* ChatBot FAB */}
+      <TouchableOpacity 
+        onPress={() => router.push('/chat')}
+        className="absolute bottom-6 right-6 w-14 h-14 bg-[#0b5ed7] rounded-full items-center justify-center shadow-lg"
+        style={{ elevation: 5 }}
+      >
+        <MaterialCommunityIcons name="robot" size={28} color="white" />
+        <View className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full border-2 border-white items-center justify-center">
+          <Text className="text-white text-[8px] font-bold">1</Text>
+        </View>
+      </TouchableOpacity>
     </View>
   );
 }

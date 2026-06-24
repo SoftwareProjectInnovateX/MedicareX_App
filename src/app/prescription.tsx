@@ -5,6 +5,9 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../services/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function PrescriptionScreen() {
   const router = useRouter();
@@ -41,32 +44,36 @@ export default function PrescriptionScreen() {
     setUploading(true);
 
     try {
-      const fd = new FormData();
-      fd.append('prescription', {
-        uri: file.uri,
-        name: file.name,
-        type: file.mimeType || 'application/octet-stream',
-      } as any);
-      fd.append('customerName', name);
-      fd.append('customerPhone', phone);
-      fd.append('customerAddress', address);
-      if (user?.uid) {
-        fd.append('userId', user.uid);
+      let fileUrl = '';
+      
+      // 1. Upload to Firebase Storage
+      if (file.uri) {
+        const storage = getStorage();
+        // create a unique filename
+        const filename = `prescriptions/${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, filename);
+        
+        // Convert URI to Blob for upload
+        const response = await fetch(file.uri);
+        const blob = await response.blob();
+        
+        await uploadBytes(storageRef, blob);
+        fileUrl = await getDownloadURL(storageRef);
       }
 
-      const res = await fetch('http://10.132.249.9:5000/api/prescriptions/upload', {
-        method: 'POST',
-        body: fd,
-        headers: {
-          'Accept': 'application/json',
-          // Note: Content-Type is set automatically by fetch when passing FormData
-        },
-      });
+      // 2. Save to Firestore
+      const prescriptionData = {
+        userId: user?.uid || 'guest',
+        customerName: name,
+        customerPhone: phone,
+        customerAddress: address,
+        imageUrl: fileUrl,
+        fileName: file.name,
+        status: 'Pending',
+        createdAt: serverTimestamp(),
+      };
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Upload failed');
-      }
+      await addDoc(collection(db, 'prescriptions'), prescriptionData);
 
       Alert.alert(
         'Success',

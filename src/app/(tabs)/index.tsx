@@ -1,14 +1,57 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Linking } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Linking, Dimensions, FlatList, Platform } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { collection, getDocs, query, limit } from 'firebase/firestore';
+import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
+import Footer from '../../components/Footer';
 import { useLocationStore } from '../../stores/locationStore';
 import { CATEGORIES } from '../../constants/categories';
 
+const { width } = Dimensions.get('window');
+const CAROUSEL_WIDTH = width - 48; // padding 24 on each side
+
+const CAROUSEL_DATA = [
+  {
+    id: '1',
+    label: 'MEDICAREX',
+    title: 'Your Health,\nOur Priority',
+    subtitle: 'We make getting your medicines simple, safe, and stress-free.',
+    buttonText: 'Chat on WhatsApp',
+    buttonAction: () => Linking.openURL('whatsapp://send?phone=+94112345678'),
+    bgColor: '#1a87e1', // Brand Blue
+    icon: 'whatsapp',
+    imageUrl: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?q=80&w=800&auto=format&fit=crop', // Healthcare
+    isFullBackground: true
+  },
+  {
+    id: '2',
+    label: 'SPECIAL OFFER',
+    title: 'Get 20%\nDiscount',
+    subtitle: 'On your first order with us. Valid for all prescription medicines.',
+    buttonText: 'Shop Now',
+    buttonAction: (router: any) => router.push('/products'),
+    bgColor: '#0f2a5e', // Premium Dark Blue
+    icon: 'medical-bag',
+    imageUrl: 'https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=800&auto=format&fit=crop', // Pharmacy Counter
+    isFullBackground: true
+  },
+  {
+    id: '3',
+    label: 'FAST DELIVERY',
+    title: 'Doorstep\nDelivery',
+    subtitle: 'Get your medicines delivered right to your doorstep within hours.',
+    buttonText: 'Upload Rx',
+    buttonAction: (router: any) => router.push('/prescription'),
+    bgColor: '#1a87e1', // Brand Blue
+    icon: 'truck-delivery',
+    imageUrl: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?q=80&w=800&auto=format&fit=crop', // Delivery Box
+    isFullBackground: true
+  }
+];
 export default function HomeScreen() {
   const { user } = useAuth();
   const router = useRouter();
@@ -18,10 +61,21 @@ export default function HomeScreen() {
   const [showAllProducts, setShowAllProducts] = useState(false);
   const { address } = useLocationStore();
   
-  // Helper for physical device localhost image resolution
+  const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+      setActiveCarouselIndex(viewableItems[0].index);
+    }
+  }).current;
+
+  
+  // Helper for physical device & emulator localhost image resolution
   const formatImageUrl = (url?: string) => {
     if (!url) return undefined;
-    return url.replace('localhost', '10.207.127.9').replace('127.0.0.1', '10.207.127.9');
+    // Android emulator needs 10.0.2.2 to access host's localhost, physical devices need LAN IP
+    const hostIp = Platform.OS === 'android' ? '10.0.2.2' : '10.207.127.9';
+    return url.replace('localhost', hostIp).replace('127.0.0.1', hostIp);
   };
   
   const cartItems = useCartStore(state => state.items);
@@ -37,8 +91,8 @@ export default function HomeScreen() {
 
   const fetchProducts = async () => {
     try {
-      // Fetch up to 20 products for the popular section instead of strictly 6
-      const q = query(collection(db, 'adminProducts'), limit(20));
+      // We fetch products from pharmacistProducts where visibility is customer to get the correct images
+      const q = query(collection(db, 'pharmacistProducts'), where('visibility', '==', 'customer'));
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(items);
@@ -105,17 +159,87 @@ export default function HomeScreen() {
         </View>
 
         <View className="px-6 py-6">
-          {/* Promotional Banner */}
-          <View className="bg-accent rounded-2xl p-6 flex-row justify-between items-center mb-8 shadow-sm">
-            <View className="flex-1 pr-4">
-              <Text className="text-accentLight font-semibold mb-1">Special Offer</Text>
-              <Text className="text-white text-2xl font-bold mb-4 leading-tight">Get 20%{"\n"}Discount</Text>
-              <TouchableOpacity className="bg-white px-5 py-2 rounded-full self-start">
-                <Text className="text-accent font-bold">Shop Now</Text>
-              </TouchableOpacity>
-            </View>
-            <View className="w-24 h-24 bg-primary0 rounded-full items-center justify-center">
-               <MaterialCommunityIcons name="medical-bag" size={48} color="#1a87e1" />
+          {/* Promotional Banner Carousel */}
+          <View className="mb-8">
+            <FlatList
+              data={CAROUSEL_DATA}
+              keyExtractor={item => item.id}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={CAROUSEL_WIDTH}
+              decelerationRate="fast"
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={viewabilityConfig}
+              renderItem={({ item }) => (
+                <View style={{ width: CAROUSEL_WIDTH }}>
+                  <View 
+                    style={{ backgroundColor: item.bgColor }} 
+                    className="rounded-2xl flex-row justify-between items-center shadow-sm min-h-[160px] overflow-hidden relative"
+                  >
+                    {item.isFullBackground && item.imageUrl && (
+                      <View className="absolute inset-0 w-full h-full">
+                        <Image 
+                          source={{ uri: item.imageUrl }}
+                          className="w-full h-full absolute right-0 top-0"
+                          style={{ resizeMode: 'cover', opacity: 0.9 }}
+                        />
+                        <LinearGradient
+                          colors={[item.bgColor, item.bgColor, 'transparent']}
+                          locations={[0, 0.45, 1]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
+                        />
+                      </View>
+                    )}
+                    
+                    <View className="flex-1 pr-2 p-5 z-10">
+                      <Text className="text-white/80 font-semibold mb-1 text-[10px] tracking-wider uppercase">{item.label}</Text>
+                      <Text className="text-white text-xl font-bold mb-1 leading-tight">{item.title}</Text>
+                      <Text className="text-white/90 text-[10px] mb-3" numberOfLines={2}>{item.subtitle}</Text>
+                      <TouchableOpacity 
+                        className="bg-white px-4 py-2 rounded-full self-start flex-row items-center"
+                        onPress={() => item.buttonAction(router)}
+                      >
+                        {item.icon === 'whatsapp' && <MaterialCommunityIcons name="whatsapp" size={16} color="#22c55e" className="mr-1.5" />}
+                        <Text style={{ color: item.bgColor }} className="font-bold text-xs">{item.buttonText}</Text>
+                      </TouchableOpacity>
+                    </View>
+                    
+                    {(!item.isFullBackground) && (
+                      <View className="pr-5 py-5 z-10">
+                        {item.imageUrl ? (
+                          <View className="w-24 h-28 rounded-xl overflow-hidden shadow-sm border border-white/20 bg-white/10">
+                             <Image 
+                               source={{ uri: item.imageUrl }} 
+                               className="w-full h-full"
+                               resizeMode="cover"
+                             />
+                          </View>
+                        ) : (
+                          <View 
+                            className={`w-20 h-20 rounded-full items-center justify-center shadow-lg border-2 ${item.icon === 'whatsapp' ? 'bg-[#25D366] border-[#25D366]' : 'bg-white/20 border-white/30'}`}
+                            style={item.icon === 'whatsapp' ? { elevation: 8 } : {}}
+                          >
+                             <MaterialCommunityIcons name={item.icon as any} size={46} color="#ffffff" />
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                </View>
+              )}
+            />
+            <View className="flex-row justify-center items-center mt-4">
+              {CAROUSEL_DATA.map((_, index) => (
+                <View
+                  key={index}
+                  className={`h-1.5 rounded-full mx-1 ${
+                    activeCarouselIndex === index ? 'w-6 bg-[#1a87e1]' : 'w-2 bg-gray-300'
+                  }`}
+                />
+              ))}
             </View>
           </View>
 
@@ -257,125 +381,9 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Footer Section - Premium Look */}
-        <View className="bg-[#0b1e42] pt-10 pb-14 px-6 mt-6 rounded-t-[40px] shadow-lg">
-          {/* Logo & Tagline */}
-          <View className="items-center mb-8">
-            <View className="flex-row items-center justify-center bg-[#1a87e1]/20 px-5 py-2 rounded-full mb-4 border border-[#1a87e1]/30">
-              <MaterialCommunityIcons name="shield-plus" color="#38bdf8" size={24} />
-              <Text className="text-2xl font-bold text-white ml-2 tracking-wide">Medicare<Text className="text-[#38bdf8]">X</Text></Text>
-            </View>
-            <Text className="text-gray-400 text-center px-4 text-xs leading-relaxed">
-              Experience the future of healthcare with our premium online pharmacy. Quality medicines, delivered with care.
-            </Text>
-          </View>
-
-          {/* Quick Links */}
-          <View className="mb-8">
-            <Text className="text-white font-bold text-sm mb-4 tracking-wider uppercase opacity-80">Quick Links</Text>
-            <View className="flex-row flex-wrap justify-between">
-              {[
-                { label: 'Shop Products', route: '/products' },
-                { label: 'Upload Prescription', route: '/prescription' },
-                { label: 'Settings', route: '/settings' },
-                { label: 'My Cart', route: '/cart' }
-              ].map((link, idx) => (
-                <TouchableOpacity 
-                  key={idx} 
-                  className="w-[48%] flex-row items-center bg-white/5 rounded-2xl p-3 mb-3 border border-white/10"
-                  onPress={() => router.push(link.route as any)}
-                >
-                  <View className="bg-[#1a87e1]/20 p-1.5 rounded-lg mr-2">
-                    <Feather name="chevron-right" color="#38bdf8" size={14} />
-                  </View>
-                  <Text className="text-gray-300 text-xs font-semibold">{link.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Contact Us Interactive */}
-          <View className="mb-8 bg-gradient-to-r from-white/10 to-transparent rounded-3xl p-5 border border-white/5">
-            <Text className="text-white font-bold text-sm mb-4 tracking-wider uppercase opacity-80">Get in Touch</Text>
-            
-            <TouchableOpacity 
-              className="flex-row items-center mb-4"
-              onPress={() => Linking.openURL('tel:+94112345678')}
-            >
-              <View className="w-10 h-10 rounded-full bg-[#1a87e1]/20 items-center justify-center mr-4 border border-[#1a87e1]/30">
-                <Feather name="phone-call" color="#38bdf8" size={16} />
-              </View>
-              <View>
-                <Text className="text-gray-400 text-[10px] uppercase tracking-wider mb-0.5">Call Support</Text>
-                <Text className="text-white font-semibold text-sm">+94 112 345 678</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              className="flex-row items-center mb-4"
-              onPress={() => Linking.openURL('mailto:care@medicarex.lk')}
-            >
-              <View className="w-10 h-10 rounded-full bg-[#1a87e1]/20 items-center justify-center mr-4 border border-[#1a87e1]/30">
-                <Feather name="mail" color="#38bdf8" size={16} />
-              </View>
-              <View>
-                <Text className="text-gray-400 text-[10px] uppercase tracking-wider mb-0.5">Email Us</Text>
-                <Text className="text-white font-semibold text-sm">care@medicarex.lk</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              className="flex-row items-center"
-              onPress={() => Linking.openURL('https://maps.google.com/?q=Colombo+03')}
-            >
-              <View className="w-10 h-10 rounded-full bg-[#1a87e1]/20 items-center justify-center mr-4 border border-[#1a87e1]/30">
-                <Feather name="map-pin" color="#38bdf8" size={16} />
-              </View>
-              <View>
-                <Text className="text-gray-400 text-[10px] uppercase tracking-wider mb-0.5">Headquarters</Text>
-                <Text className="text-white font-semibold text-sm">Colombo 03, Sri Lanka</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* Socials & Copyright */}
-          <View className="flex-row justify-center items-center space-x-8 mb-8 border-t border-white/10 pt-8">
-            <TouchableOpacity 
-              className="w-12 h-12 bg-white/5 rounded-full items-center justify-center border border-white/10"
-              onPress={() => Linking.openURL('https://facebook.com')}
-            >
-              <MaterialCommunityIcons name="facebook" color="#38bdf8" size={22} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              className="w-12 h-12 bg-white/5 rounded-full items-center justify-center border border-white/10 mx-6"
-              onPress={() => Linking.openURL('https://instagram.com')}
-            >
-              <MaterialCommunityIcons name="instagram" color="#38bdf8" size={22} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              className="w-12 h-12 bg-white/5 rounded-full items-center justify-center border border-white/10"
-              onPress={() => Linking.openURL('https://twitter.com')}
-            >
-              <MaterialCommunityIcons name="twitter" color="#38bdf8" size={22} />
-            </TouchableOpacity>
-          </View>
-          
-          <Text className="text-center text-[10px] text-gray-500 tracking-widest uppercase">
-            © {new Date().getFullYear()} MedicareX. All rights reserved.
-          </Text>
-        </View>
+        {/* Footer Section */}
+        <Footer />
       </ScrollView>
-      {/* ChatBot FAB */}
-      <TouchableOpacity 
-        onPress={() => router.push('/chat')}
-        className="absolute bottom-6 right-6 w-14 h-14 bg-[#0b5ed7] rounded-full items-center justify-center shadow-lg"
-        style={{ elevation: 5 }}
-      >
-        <MaterialCommunityIcons name="robot" size={28} color="white" />
-        <View className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full border-2 border-white items-center justify-center">
-          <Text className="text-white text-[8px] font-bold">1</Text>
-        </View>
-      </TouchableOpacity>
     </View>
   );
 }

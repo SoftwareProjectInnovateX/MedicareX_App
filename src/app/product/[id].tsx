@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -15,10 +15,11 @@ export default function ProductDetailScreen() {
   const [qty, setQty] = useState(1);
   const addItem = useCartStore(state => state.addItem);
 
-  // Helper for physical device localhost image resolution
+  // Helper for physical device & emulator localhost image resolution
   const formatImageUrl = (url?: string) => {
     if (!url) return undefined;
-    return url.replace('localhost', '10.207.127.9').replace('127.0.0.1', '10.207.127.9');
+    const hostIp = Platform.OS === 'android' ? '10.0.2.2' : '10.207.127.9';
+    return url.replace('localhost', hostIp).replace('127.0.0.1', hostIp);
   };
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function ProductDetailScreen() {
 
   const fetchProductDetails = async () => {
     try {
-      const docRef = doc(db, 'adminProducts', id as string);
+      const docRef = doc(db, 'pharmacistProducts', id as string);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setProduct({ id: docSnap.id, ...docSnap.data() });

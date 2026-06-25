@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput } from 'react-native';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput, Platform } from 'react-native';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
 import { useRouter, useGlobalSearchParams } from 'expo-router';
@@ -20,10 +20,11 @@ export default function ProductsScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Helper for physical device localhost image resolution
+  // Helper for physical device & emulator localhost image resolution
   const formatImageUrl = (url?: string) => {
     if (!url) return undefined;
-    return url.replace('localhost', '10.207.127.9').replace('127.0.0.1', '10.207.127.9');
+    const hostIp = Platform.OS === 'android' ? '10.0.2.2' : '10.207.127.9';
+    return url.replace('localhost', hostIp).replace('127.0.0.1', hostIp);
   };
 
   useEffect(() => {
@@ -43,9 +44,8 @@ export default function ProductsScreen() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      // We fetch all products and filter locally.
-      // Now that we use the same category IDs as the web app, exact matching works perfectly.
-      const q = query(collection(db, 'adminProducts'));
+      // We fetch products from pharmacistProducts to match the web app and get correct images.
+      const q = query(collection(db, 'pharmacistProducts'), where('visibility', '==', 'customer'));
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(items);

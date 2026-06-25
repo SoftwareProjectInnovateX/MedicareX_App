@@ -1,11 +1,48 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 
 const API_BASE = 'http://10.207.127.9:5000/api';
+
+const BouncingDots = () => {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animate = (dot: any, delay: number) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, {
+            toValue: -5,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    };
+    animate(dot1, 0);
+    animate(dot2, 150);
+    animate(dot3, 300);
+  }, []);
+
+  return (
+    <View className="flex-row items-center">
+      <Animated.View style={{ transform: [{ translateY: dot1 }] }} className="w-2 h-2 bg-blue-400 rounded-full mx-0.5" />
+      <Animated.View style={{ transform: [{ translateY: dot2 }] }} className="w-2 h-2 bg-blue-400 rounded-full mx-0.5" />
+      <Animated.View style={{ transform: [{ translateY: dot3 }] }} className="w-2 h-2 bg-blue-400 rounded-full mx-0.5" />
+    </View>
+  );
+};
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -89,26 +126,29 @@ export default function ChatScreen() {
   return (
     <SafeAreaView className="flex-1 bg-primary">
       {/* Header */}
-      <View className="bg-[#0b5ed7] px-4 py-3 flex-row items-center shadow-md">
+      <View className="bg-[#1a87e1] px-4 py-3 flex-row items-center shadow-md">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
           <Feather name="arrow-left" size={24} color="#ffffff" />
         </TouchableOpacity>
         
-        <View className="w-10 h-10 bg-white rounded-full items-center justify-center overflow-hidden">
-          <MaterialCommunityIcons name="shield-plus" color="#0b5ed7" size={24} />
+        <View className="w-8 h-8 bg-white rounded-full items-center justify-center overflow-hidden">
+          <MaterialCommunityIcons name="shield-plus" color="#1a87e1" size={20} />
         </View>
         
         <View className="ml-3 flex-1">
-          <Text className="text-white font-bold text-base">Health Assistant</Text>
-          <View className="flex-row items-center">
-            <View className="w-2 h-2 bg-green-400 rounded-full mr-1"></View>
-            <Text className="text-blue-200 text-xs">WHO Guidelines Only</Text>
-          </View>
+          <Text className="text-white font-semibold text-sm">Health Assistant</Text>
+          <Text className="text-blue-200 text-xs">WHO Guidelines Only</Text>
         </View>
 
-        <TouchableOpacity onPress={clearChat} className="p-2">
-          <Feather name="trash-2" size={20} color="#ffffff" />
-        </TouchableOpacity>
+        <View className="flex-row items-center">
+          <View className="flex-row items-center mr-3">
+            <View className="w-2 h-2 bg-green-400 rounded-full mr-1"></View>
+            <Text className="text-blue-200 text-xs">Online</Text>
+          </View>
+          <TouchableOpacity onPress={clearChat} className="p-1">
+            <Feather name="refresh-cw" size={16} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <KeyboardAvoidingView 
@@ -127,15 +167,15 @@ export default function ChatScreen() {
               className={`flex-row mb-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'bot' && (
-                <View className="w-8 h-8 bg-blue-100 rounded-full items-center justify-center mr-2 mt-1">
-                  <MaterialCommunityIcons name="robot" color="#0b5ed7" size={16} />
+                <View className="w-7 h-7 bg-blue-100 rounded-full items-center justify-center mr-2 mt-1">
+                  <Text className="text-[#1a87e1] text-sm font-bold">+</Text>
                 </View>
               )}
               
               <View 
                 className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                   msg.role === 'user' 
-                    ? 'bg-[#0b5ed7] rounded-br-sm' 
+                    ? 'bg-[#1a87e1] rounded-br-sm' 
                     : 'bg-white border border-[#e5e7eb] rounded-bl-sm'
                 }`}
               >
@@ -159,11 +199,11 @@ export default function ChatScreen() {
           
           {isLoading && (
             <View className="flex-row justify-start mb-4">
-              <View className="w-8 h-8 bg-blue-100 rounded-full items-center justify-center mr-2 mt-1">
-                <MaterialCommunityIcons name="robot" color="#0b5ed7" size={16} />
+              <View className="w-7 h-7 bg-blue-100 rounded-full items-center justify-center mr-2 mt-1">
+                <Text className="text-[#1a87e1] text-sm font-bold">+</Text>
               </View>
-              <View className="bg-white border border-[#e5e7eb] px-4 py-3 rounded-2xl rounded-bl-sm flex-row items-center">
-                <ActivityIndicator size="small" color="#0b5ed7" />
+              <View className="bg-white border border-[#e5e7eb] px-4 py-4 rounded-2xl rounded-bl-sm flex-row items-center">
+                <BouncingDots />
               </View>
             </View>
           )}
@@ -174,21 +214,24 @@ export default function ChatScreen() {
             value={input}
             onChangeText={setInput}
             placeholder="Describe your symptoms..."
-            className="flex-1 bg-primary rounded-full px-4 py-3 border border-[#e5e7eb] text-textPrimary mr-2"
+            className="flex-1 bg-white rounded-xl px-4 py-2.5 border-2 border-[#e5e7eb] text-textPrimary mr-2"
             multiline
             maxLength={500}
+            style={{ minHeight: 44, maxHeight: 100 }}
           />
           <TouchableOpacity 
             onPress={sendMessage}
             disabled={isLoading || !input.trim()}
-            className={`w-12 h-12 rounded-full items-center justify-center ${(!input.trim() || isLoading) ? 'bg-blue-300' : 'bg-[#0b5ed7]'}`}
+            className={`px-4 py-2.5 rounded-xl items-center justify-center ${(!input.trim() || isLoading) ? 'bg-blue-300' : 'bg-[#1a87e1]'}`}
           >
-            <Feather name="send" color="#ffffff" size={20} style={{ marginLeft: -2, marginTop: 2 }} />
+            <Feather name="send" color="#ffffff" size={18} />
           </TouchableOpacity>
         </View>
-        <Text className="text-center text-[10px] text-textSecondary pb-2 pt-1 bg-white">
-          For emergencies, call your local emergency number immediately
-        </Text>
+        <View className="bg-white pb-2 pt-1">
+          <Text className="text-center text-[10px] text-textSecondary">
+            For emergencies, call your local emergency number immediately
+          </Text>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

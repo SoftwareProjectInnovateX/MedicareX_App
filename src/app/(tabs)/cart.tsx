@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
 import { useCartStore } from '../../stores/cartStore';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -8,10 +8,11 @@ export default function CartScreen() {
   const { items, removeItem, updateQuantity } = useCartStore();
   const router = useRouter();
 
-  // Helper for physical device localhost image resolution
+  // Helper for physical device & emulator localhost image resolution
   const formatImageUrl = (url?: string) => {
     if (!url) return undefined;
-    return url.replace('localhost', '10.207.127.9').replace('127.0.0.1', '10.207.127.9');
+    const hostIp = Platform.OS === 'android' ? '10.0.2.2' : '10.207.127.9';
+    return url.replace('localhost', hostIp).replace('127.0.0.1', hostIp);
   };
 
   const totalAmount = items.reduce((sum, item) => sum + (item.retailPrice || item.price) * item.qty, 0);

@@ -1,7 +1,10 @@
-import { Tabs } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Tabs, useRouter } from 'expo-router';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
 
 export default function TabsLayout() {
+  const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
@@ -26,6 +29,19 @@ export default function TabsLayout() {
           title: 'Products',
           tabBarIcon: ({ color, size }) => <Feather name="search" color={color} size={size} />,
         }}
+      />
+      <Tabs.Screen
+        name="chat-tab"
+        options={{
+          title: 'Chat',
+          tabBarIcon: ({ size }) => <Ionicons name="chatbubble-ellipses-outline" size={size} color="#1a87e1" />,
+        }}
+        listeners={() => ({
+          tabPress: (e) => {
+            e.preventDefault(); // prevent default behavior
+            router.push('/chat'); // route to full screen chat
+          },
+        })}
       />
       <Tabs.Screen
         name="cart"

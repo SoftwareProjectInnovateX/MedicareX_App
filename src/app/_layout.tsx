@@ -11,12 +11,31 @@ import { useAuth } from '../context/AuthContext';
 // Keep the splash screen visible while we fetch resources
 // SplashScreen.preventAutoHideAsync();
 
+import { useCartStore } from '../stores/cartStore';
+
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutInner />
+      <CartInitializer>
+        <RootLayoutInner />
+      </CartInitializer>
     </AuthProvider>
   );
+}
+
+function CartInitializer({ children }: { children: React.ReactNode }) {
+  const fetchItems = useCartStore(state => state.fetchItems);
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    if (user) {
+      fetchItems();
+    } else {
+      useCartStore.setState({ items: [] });
+    }
+  }, [user, fetchItems]);
+
+  return <>{children}</>;
 }
 
 function RootLayoutInner() {

@@ -1,10 +1,8 @@
 import { create } from "zustand";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '../config/api';
+import { db } from '../services/firebase';
+import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
-const API = `${API_BASE_URL}/cart`;
-
-// Reads User ID from AsyncStorage
 const getCustomerId = async () => {
   return await AsyncStorage.getItem("userId") ?? null;
 };
@@ -41,9 +39,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
     const customerId = await getCustomerId();
     if (!customerId) return;
     try {
-      const res = await fetch(`${API}/${customerId}`);
-      if (!res.ok) throw new Error("Failed to fetch cart");
-      const data = await res.json();
+      const cartRef = collection(db, 'users', customerId, 'cart');
+      const snap = await getDocs(cartRef);
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as CartItem));
       set({ items: data });
     } catch (err) {
       console.error("fetchItems error:", err);
@@ -60,9 +58,8 @@ export const useCartStore = create<CartStore>((set, get) => ({
     const existing = get().items.find((i) => String(i.productId) === productId);
 
     if (existing) {
-      const newQty   = existing.qty + delta;
-      const stockKey = existing.stockId || product.stockId || product.productCode || product.productId || product.id || "";
-
+      const newQty = existing.qty + delta;
+      
       set((state) => ({
         items: state.items
           .map((i) =>
@@ -74,78 +71,62 @@ export const useCartStore = create<CartStore>((set, get) => ({
       }));
 
       try {
+        const itemRef = doc(db, 'users', customerId, 'cart', existing.id!);
         if (newQty <= 0) {
-          await fetch(`${API}/${existing.id}`, { method: "DELETE" });
+          await deleteDoc(itemRef);
         } else {
-          await fetch(`${API}/${existing.id}`, {
-            method:  "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ qty: newQty }),
-          });
-        }
-
-        if (delta > 0) {
-          await fetch(
-            `${API.replace('/cart', '/products')}/${encodeURIComponent(stockKey)}/decrement-stock`,
-            {
-              method:  'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body:    JSON.stringify({ quantity: delta }),
-            }
-          );
-        } else if (delta < 0) {
-          await fetch(
-            `${API.replace('/cart', '/products')}/${encodeURIComponent(stockKey)}/increment-stock`,
-            {
-              method:  'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body:    JSON.stringify({ quantity: Math.abs(delta) }),
-            }
-          );
+          await setDoc(itemRef, { qty: newQty }, { merge: true });
         }
       } catch (err) {
-        console.error("updateQty stock error:", err);
-        get().fetchItems(); // Retry fetching the latest items
+        console.error("updateQty error:", err);
+        get().fetchItems();
       }
-
       return;
     }
 
+    const initialQty = delta > 0 ? delta : 1;
+    const tempId = "temp-" + Date.now();
+
     const newItem = {
+      id: tempId,
       customerId,
       productId,
-      stockId:  product.stockId || product.productCode || product.productId || product.id || "",
-      name:     product.name,
-      price:    product.retailPrice ?? product.price,
+      stockId: product.stockId || product.productCode || product.productId || product.id || "",
+      name: product.name || product.productName || 'Unknown Product',
+      price: product.retailPrice ?? product.price ?? 0,
       imageUrl: product.imageUrl ?? "",
       category: product.category || '',
-      qty:      1,
+      qty: initialQty,
     };
 
+    set((state) => ({ items: [...state.items, newItem] }));
+
     try {
-      const res = await fetch(API, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(newItem),
-      });
-      if (!res.ok) throw new Error("Failed to add item");
-      const saved = await res.json();
-      set((state) => ({ items: [...state.items, saved] }));
+      const itemRef = doc(db, 'users', customerId, 'cart', productId);
+      const finalItem = { ...newItem, id: productId };
+      await setDoc(itemRef, finalItem);
+      set((state) => ({ 
+        items: state.items.map(i => i.id === tempId ? finalItem : i) 
+      }));
     } catch (err) {
       console.error("addItem error:", err);
+      set((state) => ({ items: state.items.filter(i => i.id !== tempId) }));
     }
   },
 
   removeItem: async (firestoreId: string) => {
+    const customerId = await getCustomerId();
     set((state) => ({
       items: state.items.filter((i) => i.id !== firestoreId),
     }));
 
-    try {
-      await fetch(`${API}/${firestoreId}`, { method: "DELETE" });
-    } catch (err) {
-      console.error("removeItem error:", err);
-      get().fetchItems();
+    if (customerId) {
+      try {
+        await deleteDoc(doc(db, 'users', customerId, 'cart', firestoreId));
+      } catch (err) {
+        console.error("removeItem error:", err);
+        get().fetchItems();
+      }
     }
   },
 
@@ -156,7 +137,13 @@ export const useCartStore = create<CartStore>((set, get) => ({
     set({ items: [] });
 
     try {
-      await fetch(`${API}/clear/${customerId}`, { method: "DELETE" });
+      const cartRef = collection(db, 'users', customerId, 'cart');
+      const snap = await getDocs(cartRef);
+      const batch = writeBatch(db);
+      snap.docs.forEach(d => {
+        batch.delete(d.ref);
+      });
+      await batch.commit();
     } catch (err) {
       console.error("clearCart error:", err);
       get().fetchItems();

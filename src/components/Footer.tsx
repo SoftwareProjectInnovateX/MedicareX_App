@@ -57,7 +57,7 @@ export default function Footer() {
             <TouchableOpacity onPress={() => router.push('/cart')}>
               <Text className="text-blue-100 text-sm py-1">Cart</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/offers')}>
+            <TouchableOpacity onPress={() => router.push('/offers' as any)}>
               <Text className="text-blue-100 text-sm py-1">Offers</Text>
             </TouchableOpacity>
           </View>
@@ -69,16 +69,16 @@ export default function Footer() {
             Support
           </Text>
           <View className="space-y-3">
-            <TouchableOpacity onPress={() => router.push('/help')}>
+            <TouchableOpacity onPress={() => router.push('/help' as any)}>
               <Text className="text-blue-100 text-sm py-1">Help Center</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/returns')}>
+            <TouchableOpacity onPress={() => router.push('/returns' as any)}>
               <Text className="text-blue-100 text-sm py-1">Returns</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/privacy')}>
+            <TouchableOpacity onPress={() => router.push('/privacy' as any)}>
               <Text className="text-blue-100 text-sm py-1">Privacy Policy</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/terms')}>
+            <TouchableOpacity onPress={() => router.push('/terms' as any)}>
               <Text className="text-blue-100 text-sm py-1">Terms</Text>
             </TouchableOpacity>
           </View>

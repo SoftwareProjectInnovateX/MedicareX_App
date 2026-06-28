@@ -1,24 +1,30 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCartStore } from '../stores/cartStore';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-export default function CheckoutScreen() {
+export default function RxCheckoutScreen() {
   const router = useRouter();
-  const { items, clearCart } = useCartStore();
   const { user } = useAuth();
+  const { rxId, amount, items: itemsStr } = useLocalSearchParams<{ rxId: string, amount: string, items: string }>();
 
   const [name, setName] = useState((user as any)?.fullName || '');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const totalAmount = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const totalAmount = parseFloat(amount || '0');
+  
+  let parsedItems: any[] = [];
+  try {
+    parsedItems = itemsStr ? JSON.parse(decodeURIComponent(itemsStr)) : [];
+  } catch (e) {
+    console.error("Failed to parse items:", e);
+  }
 
   const handlePlaceOrder = async () => {
     if (!name || !phone || !address) {
@@ -26,56 +32,52 @@ export default function CheckoutScreen() {
       return;
     }
 
-    if (items.length === 0) {
-      Alert.alert('Error', 'Your cart is empty.');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const orderData = {
-        userId: user?.uid || 'guest',
+      if (!rxId) throw new Error("No Prescription ID found");
+
+      // 1. Fetch existing prescription
+      const rxRef = doc(db, 'prescriptions', rxId);
+      const rxSnap = await getDoc(rxRef);
+      const rxData = rxSnap.exists() ? rxSnap.data() : null;
+
+      if (!rxData) throw new Error("Prescription not found in database.");
+
+      // 2. Update prescription status
+      await updateDoc(rxRef, {
+        status: 'Ready to Collect', // We use 'Ready to Collect' or 'Pending-COD' for COD
+        customerConfirmed: true,
+        paymentMethod: 'COD',
+        confirmedAt: serverTimestamp(),
+        customerAddress: address,
         customerName: name,
+        customerPhone: phone
+      });
+
+      // 3. Add to pharmacistDispensed history so Pharmacist sees it in Dispensed History
+      const dispensePayload = {
+        rxId: rxId,
+        patientName: name,
+        verifiedPatient: name,
         phone: phone,
         address: address,
-        orderStatus: 'Pending-COD',
+        orderItems: rxData.orderItems || rxData.medications || parsedItems || [],
+        total: totalAmount,
+        paymentStatus: 'COD',
         paymentMethod: 'COD',
-        paymentStatus: 'pending',
-        totalAmount: totalAmount,
-        totalnumber: items.length,
-        types: items.map(item => ({
-          id: item.productId || item.id || '',
-          productId: item.productId || item.id || '',
-          stockId: item.stockId || '',
-          name: item.name,
-          price: item.price,
-          quantity: item.qty,
-          imageUrl: item.imageUrl || '',
-          category: item.category || ''
-        })),
-        items: items.map(item => ({
-          id: item.productId || item.id || '',
-          productId: item.productId || item.id || '',
-          stockId: item.stockId || '',
-          name: item.name,
-          price: item.price,
-          quantity: item.qty,
-          imageUrl: item.imageUrl || '',
-          category: item.category || ''
-        })),
-        categories: [...new Set(items.map(item => item.category || '').filter(Boolean))],
-        createdAt: serverTimestamp(),
+        status: 'pending',
+        createdAt: new Date().toISOString(), // Web App pharmacistService uses ISO strings for this
+        finalized: false
       };
-
-      await addDoc(collection(db, 'CustomerOrders'), orderData);
       
-      clearCart();
-      Alert.alert('Success', 'Order placed successfully!', [
+      await addDoc(collection(db, 'pharmacistDispensed'), dispensePayload);
+
+      Alert.alert('Success', 'Prescription checkout complete! Your items will be delivered soon.', [
         { text: 'View Orders', onPress: () => router.replace('/orders') }
       ]);
     } catch (err: any) {
-      console.error('Error placing order:', err);
+      console.error('Error placing prescription order:', err);
       Alert.alert('Checkout Failed', err.message);
     } finally {
       setLoading(false);
@@ -88,26 +90,32 @@ export default function CheckoutScreen() {
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
           <Feather name="arrow-left" size={24} color="#0f2a5e" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-textPrimary">Checkout</Text>
+        <Text className="text-xl font-bold text-textPrimary">Prescription Checkout</Text>
       </View>
       
       <ScrollView className="flex-1 p-6" contentContainerStyle={{ paddingBottom: 40 }}>
         
         {/* Order Summary */}
         <View className="bg-white rounded-2xl p-6 shadow-sm border border-[#e5e7eb] mb-6">
-          <Text className="font-bold text-textPrimary text-lg mb-4">Order Summary</Text>
-          {items.map(item => (
-            <View key={item.id} className="flex-row justify-between mb-2">
-              <Text className="text-textSecondary" numberOfLines={1} style={{ flex: 1, paddingRight: 10 }}>
-                {item.name} x{item.qty}
-              </Text>
-              <Text className="font-bold text-textPrimary">
-                Rs. {(item.price * item.qty).toFixed(2)}
-              </Text>
-            </View>
-          ))}
+          <Text className="font-bold text-textPrimary text-lg mb-4">Prescription Bill</Text>
+          
+          {parsedItems.length > 0 ? (
+            parsedItems.map((item, idx) => (
+              <View key={idx} className="flex-row justify-between mb-2">
+                <Text className="text-textSecondary" numberOfLines={1} style={{ flex: 1, paddingRight: 10 }}>
+                  {item.name} x{item.qty}
+                </Text>
+                <Text className="font-bold text-textPrimary">
+                  Rs. {(item.price * item.qty).toFixed(2)}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text className="text-textSecondary mb-2">Prescription Items included.</Text>
+          )}
+
           <View className="border-t border-[#e5e7eb] mt-4 pt-4 flex-row justify-between">
-            <Text className="font-bold text-lg text-textPrimary">Total</Text>
+            <Text className="font-bold text-lg text-textPrimary">Total Amount</Text>
             <Text className="font-bold text-xl text-accent">Rs. {totalAmount.toFixed(2)}</Text>
           </View>
         </View>
@@ -171,7 +179,7 @@ export default function CheckoutScreen() {
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text className={`font-black text-lg ${(!name || !phone || !address) ? 'text-[#94A3B8]' : 'text-white'}`}>Place Order</Text>
+            <Text className={`font-black text-lg ${(!name || !phone || !address) ? 'text-[#94A3B8]' : 'text-white'}`}>Confirm Order</Text>
           )}
         </TouchableOpacity>
 

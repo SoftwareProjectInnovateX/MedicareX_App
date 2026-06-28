@@ -15,7 +15,7 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false);
 
   const [profile, setProfile] = useState({
-    name: user?.fullName || '',
+    name: (user as any)?.fullName || '',
     email: user?.email || '',
     contact: '',
     address: '',
@@ -45,7 +45,7 @@ export default function SettingsScreen() {
         if (snap.exists()) {
           const data = snap.data();
           setProfile({
-            name: data.fullName || user.fullName || '',
+            name: data.fullName || (user as any).fullName || '',
             email: data.email || user.email || '',
             contact: data.contact || '',
             address: data.address || '',

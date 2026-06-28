@@ -24,6 +24,9 @@ interface AuthContextType {
   loading: boolean;
   register: (userData: any) => Promise<any>;
   login: (email: string, password: string) => Promise<any>;
+  loginWithGoogle: () => Promise<any>;
+  loginWithGoogleCredential: (idToken: string) => Promise<any>;
+  resetPassword: (email: string) => Promise<any>;
   logout: () => Promise<any>;
   getCurrentUserData: () => Promise<any>;
 }
@@ -39,12 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Register new customer user
   const register = async (userData: any) => {
     try {
+      console.log('Register step 1: starting');
       const { fullName, email, password, phone } = userData;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Register step 2: user created', userCredential.user.uid);
       const newUser = userCredential.user;
 
+      console.log('Register step 3: fetching users collection');
       // Find the highest existing customerId
       const snapshot = await getDocs(collection(db, 'users'));
+      console.log('Register step 4: got snapshot');
       let maxNum = 0;
       snapshot.forEach(doc => {
         const data = doc.data();
@@ -67,16 +74,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatedAt: Timestamp.now(),
       };
 
+      console.log('Register step 5: setting user doc');
       await setDoc(doc(db, 'users', newUser.uid), savedUserData);
+      console.log('Register step 6: setting async storage');
       await AsyncStorage.setItem('userId',    newUser.uid);
       await AsyncStorage.setItem('userRole',  'customer');
       await AsyncStorage.setItem('userName',  fullName);
       await AsyncStorage.setItem('userEmail', email);
       setUserRole('customer');
 
+      console.log('Register step 7: success');
       return {
         success: true,
-        user: { uid: newUser.uid, email, role: 'customer', ...savedUserData },
+        user: { uid: newUser.uid, ...savedUserData },
       };
 
     } catch (error: any) {
@@ -92,10 +102,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Login user (strictly customer for this app)
   const login = async (email: string, password: string) => {
     try {
+      console.log('Login step 1: starting');
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Login step 2: signed in', userCredential.user.uid);
       const loggedInUser = userCredential.user;
 
+      console.log('Login step 3: fetching user doc');
       const userDoc = await getDoc(doc(db, 'users', loggedInUser.uid));
+      console.log('Login step 4: got user doc');
       
       if (!userDoc.exists()) {
         await signOut(auth);
@@ -110,17 +124,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Only customers can log in to this app.');
       }
 
+      console.log('Login step 5: updating last login');
       await setDoc(doc(db, 'users', loggedInUser.uid), {
         ...userData,
         lastLogin: Timestamp.now()
       }, { merge: true });
 
+      console.log('Login step 6: setting async storage');
       await AsyncStorage.setItem('userId', loggedInUser.uid);
       await AsyncStorage.setItem('userRole', actualRole);
       await AsyncStorage.setItem('userName', userData.fullName || userData.name);
       await AsyncStorage.setItem('userEmail', userData.email);
 
       setUserRole(actualRole);
+      console.log('Login step 7: success');
       return { 
         success: true, 
         user: {
@@ -138,6 +155,103 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (error.message.includes('not found') || error.message.includes('customers')) {
         message = error.message;
       }
+      throw new Error(message);
+    }
+  };
+
+  // Google Login (Web)
+  const loginWithGoogle = async () => {
+    try {
+      const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      return handleGoogleUser(userCredential.user);
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      throw new Error(error.message || 'Google login failed');
+    }
+  };
+
+  // Google Login (Mobile/Credential)
+  const loginWithGoogleCredential = async (idToken: string) => {
+    try {
+      const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+      const credential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(auth, credential);
+      return handleGoogleUser(userCredential.user);
+    } catch (error: any) {
+      console.error('Google credential login error:', error);
+      throw new Error(error.message || 'Google login failed');
+    }
+  };
+
+  // Helper for Google user DB logic
+  const handleGoogleUser = async (loggedInUser: User) => {
+    const userDocRef = doc(db, 'users', loggedInUser.uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    let actualRole = 'customer';
+    let userData: any = {
+      fullName: loggedInUser.displayName || '',
+      email: loggedInUser.email,
+      phone: loggedInUser.phoneNumber || '',
+      role: 'customer',
+      status: 'active',
+    };
+
+    if (!userDoc.exists()) {
+      // Find highest customerId
+      const snapshot = await getDocs(collection(db, 'users'));
+      let maxNum = 0;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.customerId) {
+          const num = parseInt(data.customerId.replace('C', ''));
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      const customerId = `C${String(maxNum + 1).padStart(3, '0')}`;
+      
+      userData.customerId = customerId;
+      userData.createdAt = Timestamp.now();
+      userData.updatedAt = Timestamp.now();
+      userData.lastLogin = Timestamp.now();
+      
+      await setDoc(userDocRef, userData);
+    } else {
+      const existingData = userDoc.data();
+      actualRole = existingData.role;
+      if (actualRole !== 'customer') {
+        await signOut(auth);
+        throw new Error('Only customers can log in to this app.');
+      }
+      userData = { ...existingData, lastLogin: Timestamp.now() };
+      await setDoc(userDocRef, userData, { merge: true });
+    }
+
+    await AsyncStorage.setItem('userId', loggedInUser.uid);
+    await AsyncStorage.setItem('userRole', actualRole);
+    await AsyncStorage.setItem('userName', userData.fullName || userData.name || '');
+    await AsyncStorage.setItem('userEmail', userData.email || '');
+
+    setUserRole(actualRole);
+    return { 
+      success: true, 
+      user: { uid: loggedInUser.uid, ...userData }
+    };
+  };
+
+  // Password Reset
+  const resetPassword = async (email: string) => {
+    try {
+      const { sendPasswordResetEmail } = await import('firebase/auth');
+      await sendPasswordResetEmail(auth, email);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      let message = 'Failed to send reset email';
+      if (error.code === 'auth/user-not-found') message = 'No user found with this email';
+      else if (error.code === 'auth/invalid-email') message = 'Invalid email address';
       throw new Error(message);
     }
   };
@@ -191,18 +305,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           try {
             const userDoc = await getDoc(doc(db, 'users', authenticatedUser.uid));
-            if (userDoc.exists() && userDoc.data().role === 'customer') {
-              const userData = userDoc.data();
-              setUserRole('customer');
-              await AsyncStorage.setItem('userId', authenticatedUser.uid);
-              await AsyncStorage.setItem('userRole', 'customer');
-              await AsyncStorage.setItem('userName', userData.fullName);
-              await AsyncStorage.setItem('userEmail', userData.email);
+            if (userDoc.exists()) {
+              if (userDoc.data().role === 'customer') {
+                const userData = userDoc.data();
+                setUserRole('customer');
+                await AsyncStorage.setItem('userId', authenticatedUser.uid);
+                await AsyncStorage.setItem('userRole', 'customer');
+                await AsyncStorage.setItem('userName', userData.fullName || '');
+                await AsyncStorage.setItem('userEmail', userData.email || '');
+              } else {
+                 await signOut(auth);
+                 setUser(null);
+                 setCurrentUser(null);
+                 setUserRole(null);
+              }
             } else {
-               await signOut(auth);
-               setUser(null);
-               setCurrentUser(null);
-               setUserRole(null);
+              // It's a new user being registered. We don't sign out.
+              // The register() function will handle creating the document.
+              console.log("User doc doesn't exist yet, likely a new registration.");
             }
           } catch (error) {
             console.error('Error fetching user role:', error);
@@ -231,6 +351,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     register,
     login,
+    loginWithGoogle,
+    loginWithGoogleCredential,
+    resetPassword,
     logout,
     getCurrentUserData
   };

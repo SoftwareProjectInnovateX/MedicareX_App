@@ -117,7 +117,7 @@ export default function HomeScreen() {
           </View>
         </View>
         <View className="flex-row items-center space-x-5">
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/notifications')}>
             <Feather name="bell" color="#1E293B" size={24} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/cart')} className="relative ml-4">

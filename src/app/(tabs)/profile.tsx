@@ -43,7 +43,7 @@ export default function ProfileScreen() {
             <Feather name="user" color="#1a87e1" size={40} />
           </View>
           <View className="ml-4 flex-1">
-            <Text className="text-2xl font-bold text-white mb-1">{user.fullName || 'Valued Customer'}</Text>
+            <Text className="text-2xl font-bold text-white mb-1">{(user as any).fullName || 'Valued Customer'}</Text>
             <Text className="text-accentLight font-medium">{user.email}</Text>
             <TouchableOpacity className="mt-2 bg-primary0 self-start px-3 py-1 rounded-full" onPress={() => router.push('/settings')}>
               <Text className="text-white text-xs font-semibold">Edit Profile</Text>

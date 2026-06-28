@@ -14,6 +14,7 @@ export default function ProductDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const addItem = useCartStore(state => state.addItem);
+  const cartItemsCount = useCartStore(state => state.items).length;
 
   // Helper for physical device & emulator localhost image resolution
   const formatImageUrl = (url?: string) => {
@@ -81,10 +82,15 @@ export default function ProductDetailScreen() {
           <Feather name="arrow-left" color="#1E293B" size={20} />
         </TouchableOpacity>
         <TouchableOpacity 
-          className="w-10 h-10 bg-white/80 rounded-full items-center justify-center backdrop-blur-md shadow-sm"
+          className="w-10 h-10 bg-white/80 rounded-full items-center justify-center backdrop-blur-md shadow-sm relative"
           onPress={() => router.push('/cart')}
         >
           <Feather name="shopping-cart" color="#1E293B" size={20} />
+          {cartItemsCount > 0 && (
+            <View className="absolute -top-1 -right-1 bg-red-600 rounded-full w-5 h-5 items-center justify-center border-2 border-white">
+              <Text className="text-white text-[10px] font-bold">{cartItemsCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -165,16 +171,7 @@ export default function ProductDetailScreen() {
         <TouchableOpacity 
           className="flex-1 ml-6 bg-accent h-14 rounded-full flex-row items-center justify-center shadow-md shadow-accent/30"
           onPress={() => {
-            // Need to pass the custom qty
-            const cartItem = { ...product, qty };
-            // Since store's addItem usually defaults to qty 1 or increments if exists,
-            // we will call addItem 'qty' times or implement a custom bulk add.
-            // For simplicity with existing store, we can just call addItem once and it adds qty 1.
-            // To add multiple, we loop.
-            for(let i = 0; i < qty; i++) {
-              addItem(product);
-            }
-            router.push('/cart');
+            addItem(product, qty);
           }}
         >
           <Feather name="shopping-bag" color="#ffffff" size={20} />

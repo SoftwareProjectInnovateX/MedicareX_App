@@ -10,60 +10,97 @@ import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestor
 
 
 
-const OrderCard = ({ order }: { order: any }) => (
-  <View className="bg-white rounded-2xl p-4 mb-4 border border-[#e5e7eb] shadow-sm">
-    <View className="flex-row justify-between items-start mb-3">
-      <View>
-        <Text className="text-xs uppercase font-bold text-textMuted tracking-wider">
-          {order.type === 'prescription' ? 'PRESCRIPTION' : 'ORDER'} #{order.id?.slice(-6) || '---'}
-        </Text>
-        <Text className="text-lg font-bold text-textPrimary mt-1">
-          {order.type === 'prescription' ? 'Rx Request' : `${order.types?.length || 0} Items`}
-        </Text>
-      </View>
-      <View className={`px-3 py-1 rounded-full ${
-        order.orderStatus?.toLowerCase() === 'delivered' ? 'bg-green-100' :
-        order.orderStatus?.toLowerCase() === 'pending' ? 'bg-orange-100' : 'bg-blue-100'
-      }`}>
-        <Text className={`text-[10px] font-bold uppercase tracking-wider ${
-          order.orderStatus?.toLowerCase() === 'delivered' ? 'text-green-700' :
-          order.orderStatus?.toLowerCase() === 'pending' ? 'text-orange-700' : 'text-blue-700'
-        }`}>{order.orderStatus}</Text>
-      </View>
-    </View>
-    
-    {order.type === 'prescription' && order.medications && order.medications.length > 0 && (
-      <View className="bg-slate-50 p-3 rounded-xl mb-3 border border-slate-200">
-        <Text className="text-xs font-bold text-slate-700 mb-2">Quoted Medications:</Text>
-        {order.medications.map((m: any, idx: number) => (
-          <View key={idx} className="flex-row justify-between mb-1">
-            <Text className="text-xs text-slate-600">{m.name} <Text className="font-bold">x{m.qty}</Text></Text>
-            <Text className="text-xs font-bold text-slate-800">Rs. {(m.total || (m.qty * m.price)).toFixed(2)}</Text>
-          </View>
-        ))}
-      </View>
-    )}
+const OrderCard = ({ order }: { order: any }) => {
+  const router = useRouter();
 
-    {order.type === 'regular' && order.types && order.types.length > 0 && (
-       <View className="mb-3">
-          <Text className="text-xs text-slate-600 mb-1" numberOfLines={1}>
-            {order.types.map((t: any) => t.productName || t.name).join(', ')}
+  const handleAccept = () => {
+    router.push(`/rx-checkout?rxId=${order.id}&amount=${order.totalPrice || order.totalAmount || order.total || 0}&items=${encodeURIComponent(JSON.stringify(order.medications || []))}`);
+  };
+
+  const handleReject = async () => {
+    try {
+      const { doc, updateDoc } = await import('firebase/firestore');
+      await updateDoc(doc(db, 'prescriptions', order.id), {
+        status: 'Rejected',
+        customerConfirmed: false
+      });
+      alert('Prescription rejected successfully.');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to reject prescription.');
+    }
+  };
+
+  return (
+    <View className="bg-white rounded-2xl p-4 mb-4 border border-[#e5e7eb] shadow-sm">
+      <View className="flex-row justify-between items-start mb-3">
+        <View>
+          <Text className="text-xs uppercase font-bold text-textMuted tracking-wider">
+            {order.type === 'prescription' ? 'PRESCRIPTION' : 'ORDER'} #{order.id?.slice(-6) || '---'}
           </Text>
-       </View>
-    )}
-    
-    <View className="flex-row justify-between items-center pt-3 border-t border-slate-100">
-      <View>
-        <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">Total</Text>
-        <Text className="text-sm font-black text-accent">Rs. {(order.totalPrice || order.totalAmount || order.total || 0).toLocaleString()}</Text>
+          <Text className="text-lg font-bold text-textPrimary mt-1">
+            {order.type === 'prescription' ? 'Rx Request' : `${order.types?.length || 0} Items`}
+          </Text>
+        </View>
+        <View className={`px-3 py-1 rounded-full ${
+          order.orderStatus?.toLowerCase() === 'delivered' ? 'bg-green-100' :
+          order.orderStatus?.toLowerCase() === 'approved' ? 'bg-emerald-100' :
+          order.orderStatus?.toLowerCase() === 'pending' ? 'bg-orange-100' : 'bg-blue-100'
+        }`}>
+          <Text className={`text-[10px] font-bold uppercase tracking-wider ${
+            order.orderStatus?.toLowerCase() === 'delivered' ? 'text-green-700' :
+            order.orderStatus?.toLowerCase() === 'approved' ? 'text-emerald-700' :
+            order.orderStatus?.toLowerCase() === 'pending' ? 'text-orange-700' : 'text-blue-700'
+          }`}>{order.orderStatus}</Text>
+        </View>
       </View>
-      <View className="flex-row items-center bg-accentLight px-4 py-2 rounded-xl">
-        <Text className="text-accent text-xs font-bold mr-1">View Details</Text>
-        <Feather name="chevron-right" size={14} color="#1a87e1" />
+      
+      {order.type === 'prescription' && order.medications && order.medications.length > 0 && (
+        <View className="bg-slate-50 p-3 rounded-xl mb-3 border border-slate-200">
+          <Text className="text-xs font-bold text-slate-700 mb-2">Quoted Medications:</Text>
+          {order.medications.map((m: any, idx: number) => (
+            <View key={idx} className="flex-row justify-between mb-1">
+              <Text className="text-xs text-slate-600">{m.name} <Text className="font-bold">x{m.qty}</Text></Text>
+              <Text className="text-xs font-bold text-slate-800">Rs. {(m.total || (m.qty * m.price)).toFixed(2)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {order.type === 'regular' && order.types && order.types.length > 0 && (
+         <View className="mb-3">
+            <Text className="text-xs text-slate-600 mb-1" numberOfLines={1}>
+              {order.types.map((t: any) => t.productName || t.name).join(', ')}
+            </Text>
+         </View>
+      )}
+      
+      <View className="flex-row justify-between items-center pt-3 border-t border-slate-100">
+        <View>
+          <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">Total</Text>
+          <Text className="text-sm font-black text-accent">Rs. {(order.totalPrice || order.totalAmount || order.total || 0).toLocaleString()}</Text>
+        </View>
+
+        {order.type === 'prescription' && order.orderStatus === 'Approved' ? (
+          <View className="flex-row items-center space-x-2">
+            <Pressable onPress={handleReject} className="px-4 py-2 border border-red-200 bg-red-50 rounded-xl mr-2">
+              <Text className="text-red-600 text-xs font-bold">Reject</Text>
+            </Pressable>
+            <Pressable onPress={handleAccept} className="px-4 py-2 bg-emerald-600 rounded-xl flex-row items-center">
+              <Text className="text-white text-xs font-bold mr-1">Pay Now</Text>
+              <Feather name="chevron-right" size={14} color="#ffffff" />
+            </Pressable>
+          </View>
+        ) : (
+          <View className="flex-row items-center bg-accentLight px-4 py-2 rounded-xl">
+            <Text className="text-accent text-xs font-bold mr-1">View Details</Text>
+            <Feather name="chevron-right" size={14} color="#1a87e1" />
+          </View>
+        )}
       </View>
     </View>
-  </View>
-);
+  );
+};
 
 export default function OrdersScreen() {
   const router = useRouter();
@@ -83,7 +120,7 @@ export default function OrdersScreen() {
     let unsubPres = () => {};
 
     const qOrders = query(
-      collection(db, 'orders'),
+      collection(db, 'CustomerOrders'),
       where('userId', '==', user.uid)
     );
 

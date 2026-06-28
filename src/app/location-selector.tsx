@@ -136,7 +136,7 @@ export default function LocationSelectorScreen() {
             )}
             renderRightButton={() => loadingAddress ? (
               <ActivityIndicator size="small" color="#1a87e1" style={{ marginRight: 8 }} />
-            ) : null}
+            ) : <View />}
           />
         </View>
 

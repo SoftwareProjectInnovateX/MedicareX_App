@@ -19,6 +19,8 @@ export default function ProductsScreen() {
   
   const router = useRouter();
   const { user } = useAuth();
+  const cartItems = useCartStore((state) => state.items);
+  const addItem = useCartStore((state) => state.addItem);
 
   // Helper for physical device & emulator localhost image resolution
   const formatImageUrl = (url?: string) => {
@@ -73,6 +75,11 @@ export default function ProductsScreen() {
 
   const activeCategoryName = CATEGORIES.find(c => c.id === selectedCategory)?.name || 'All Products';
 
+  const getCartItem = (product: any) => {
+    const prodId = String(product.id || product.productId || product.productCode);
+    return cartItems.find((item) => String(item.productId) === prodId);
+  };
+
   return (
     <View className="flex-1 bg-primary">
       {/* Header */}
@@ -121,7 +128,10 @@ export default function ProductsScreen() {
         ) : (
           <View className="flex-row flex-wrap justify-between pb-8">
             {filteredProducts.length > 0 ? (
-              filteredProducts.map((product) => (
+              filteredProducts.map((product) => {
+                const cartItem = getCartItem(product);
+                
+                return (
                 <TouchableOpacity 
                   key={product.id} 
                   className="w-[48%] bg-white rounded-2xl p-4 mb-4 shadow-sm border border-[#e5e7eb]"
@@ -141,15 +151,35 @@ export default function ProductsScreen() {
                   
                   <View className="flex-row justify-between items-center mt-auto">
                     <Text className="text-accent font-bold text-lg">Rs. {product.retailPrice || product.price}</Text>
-                    <TouchableOpacity 
-                      className="bg-accent w-8 h-8 rounded-full items-center justify-center"
-                      onPress={() => useCartStore.getState().addItem(product)}
-                    >
-                      <Feather name="plus" color="#ffffff" size={20} />
-                    </TouchableOpacity>
+                    
+                    {cartItem ? (
+                      <View className="flex-row items-center bg-accent rounded-full h-8">
+                        <TouchableOpacity 
+                          onPress={() => addItem(product, -1)} 
+                          className="w-8 h-8 items-center justify-center"
+                        >
+                          <Feather name="minus" color="#ffffff" size={14} />
+                        </TouchableOpacity>
+                        <Text className="text-white font-bold px-1 text-sm">{cartItem.qty}</Text>
+                        <TouchableOpacity 
+                          onPress={() => addItem(product, 1)} 
+                          className="w-8 h-8 items-center justify-center"
+                        >
+                          <Feather name="plus" color="#ffffff" size={14} />
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity 
+                        className="bg-accent w-8 h-8 rounded-full items-center justify-center"
+                        onPress={() => addItem(product, 1)}
+                      >
+                        <Feather name="plus" color="#ffffff" size={20} />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </TouchableOpacity>
-              ))
+                );
+              })
             ) : (
               <View className="flex-1 items-center justify-center py-10">
                 <Feather name="inbox" size={48} color="#94A3B8" className="mb-4" />

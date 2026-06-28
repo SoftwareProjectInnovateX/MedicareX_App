@@ -1,9 +1,12 @@
 import { Tabs, useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { useCartStore } from '../../stores/cartStore';
 
 export default function TabsLayout() {
   const router = useRouter();
+  const cartItems = useCartStore(state => state.items);
+  const cartCount = cartItems.length;
 
   return (
     <Tabs
@@ -48,6 +51,7 @@ export default function TabsLayout() {
         options={{
           title: 'Cart',
           tabBarIcon: ({ color, size }) => <Feather name="shopping-cart" color={color} size={size} />,
+          tabBarBadge: cartCount > 0 ? cartCount : undefined,
         }}
       />
       <Tabs.Screen

@@ -101,9 +101,38 @@ export default function NotificationsScreen() {
       setLoading(false);
     });
 
+    // Subscribe to Customer Returns
+    const qReturns = query(collection(db, 'CustomerReturns'), where('userEmail', '==', user.email || user.uid));
+    const unsubReturns = onSnapshot(qReturns, (snap) => {
+      let notifs: any[] = [];
+      snap.docs.forEach(d => {
+        const r = d.data();
+        if (r.returnStatus === 'approved') {
+          notifs.push({
+            id: `ret-app-${d.id}`,
+            orderId: r.orderId,
+            title: 'Return Successful',
+            message: `Your return request for Order #${(r.orderId || '').slice(-6)} has been approved and processed.`,
+            type: 'return_approved',
+            time: r.createdAt?.seconds * 1000 || Date.now(),
+            icon: 'refresh-ccw',
+            color: 'bg-emerald-100',
+            iconColor: '#10b981'
+          });
+        }
+      });
+
+      setNotifications(prev => {
+        const filtered = prev.filter(n => !n.id.startsWith('ret-'));
+        const combined = [...filtered, ...notifs].sort((a, b) => b.time - a.time);
+        return combined;
+      });
+    });
+
     return () => {
       unsubPres();
       unsubOrders();
+      unsubReturns();
     };
   }, [user]);
 

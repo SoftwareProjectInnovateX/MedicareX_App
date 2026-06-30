@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput, Platform, Modal } from 'react-native';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
@@ -15,8 +15,16 @@ export default function ProductsScreen() {
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(initialCategory);
   
+  // Filter states
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(initialCategory);
+  const [sortOrder, setSortOrder] = useState<'default' | 'priceAsc' | 'priceDesc'>('default');
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  
+  // Temporary states for the modal to allow applying filters at once
+  const [tempCategory, setTempCategory] = useState<string | undefined>(initialCategory);
+  const [tempSortOrder, setTempSortOrder] = useState<'default' | 'priceAsc' | 'priceDesc'>('default');
+
   const router = useRouter();
   const { user } = useAuth();
   const cartItems = useCartStore((state) => state.items);
@@ -32,6 +40,7 @@ export default function ProductsScreen() {
   useEffect(() => {
     if (initialCategory) {
       setSelectedCategory(initialCategory);
+      setTempCategory(initialCategory);
     }
   }, [initialCategory]);
 
@@ -46,7 +55,6 @@ export default function ProductsScreen() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      // We fetch products from pharmacistProducts to match the web app and get correct images.
       const q = query(collection(db, 'pharmacistProducts'), where('visibility', '==', 'customer'));
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -59,9 +67,8 @@ export default function ProductsScreen() {
   };
 
   useEffect(() => {
-    let result = products;
+    let result = [...products];
     if (selectedCategory) {
-      // Exact match with id since both web and mobile now use the same CATEGORIES structure
       result = result.filter(p => p.category === selectedCategory);
     }
     if (searchQuery) {
@@ -70,14 +77,46 @@ export default function ProductsScreen() {
         return pName.toLowerCase().includes(searchQuery.toLowerCase());
       });
     }
+    
+    if (sortOrder === 'priceAsc') {
+      result.sort((a, b) => {
+        const priceA = Number(a.retailPrice || a.price || 0);
+        const priceB = Number(b.retailPrice || b.price || 0);
+        return priceA - priceB;
+      });
+    } else if (sortOrder === 'priceDesc') {
+      result.sort((a, b) => {
+        const priceA = Number(a.retailPrice || a.price || 0);
+        const priceB = Number(b.retailPrice || b.price || 0);
+        return priceB - priceA;
+      });
+    }
+    
     setFilteredProducts(result);
-  }, [products, searchQuery, selectedCategory]);
+  }, [products, searchQuery, selectedCategory, sortOrder]);
 
   const activeCategoryName = CATEGORIES.find(c => c.id === selectedCategory)?.name || 'All Products';
 
   const getCartItem = (product: any) => {
     const prodId = String(product.id || product.productId || product.productCode);
     return cartItems.find((item) => String(item.productId) === prodId);
+  };
+
+  const openFilterModal = () => {
+    setTempCategory(selectedCategory);
+    setTempSortOrder(sortOrder);
+    setShowFilterModal(true);
+  };
+
+  const applyFilters = () => {
+    setSelectedCategory(tempCategory);
+    setSortOrder(tempSortOrder);
+    setShowFilterModal(false);
+  };
+
+  const clearFilters = () => {
+    setTempCategory(undefined);
+    setTempSortOrder('default');
   };
 
   return (
@@ -88,15 +127,24 @@ export default function ProductsScreen() {
           {activeCategoryName}
         </Text>
         <View className="flex-row items-center">
-          {selectedCategory && (
+          {(selectedCategory || sortOrder !== 'default') && (
             <TouchableOpacity 
-              className="mr-3 px-3 py-1 bg-slate-100 rounded-full"
-              onPress={() => setSelectedCategory(undefined)}
+              className="mr-3 px-3 py-1 bg-slate-100 rounded-full flex-row items-center"
+              onPress={() => {
+                setSelectedCategory(undefined);
+                setSortOrder('default');
+              }}
             >
-              <Text className="text-xs text-textSecondary font-bold">Clear</Text>
+              <Text className="text-xs text-textSecondary font-bold mr-1">Clear</Text>
+              <Feather name="x" size={12} color="#64748B" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity className="w-10 h-10 bg-primary rounded-full items-center justify-center">
+          <TouchableOpacity 
+            className={`w-10 h-10 rounded-full items-center justify-center ${
+              (selectedCategory || sortOrder !== 'default') ? 'bg-blue-100' : 'bg-primary'
+            }`}
+            onPress={openFilterModal}
+          >
             <Feather name="filter" color="#1a87e1" size={20} />
           </TouchableOpacity>
         </View>
@@ -183,12 +231,108 @@ export default function ProductsScreen() {
             ) : (
               <View className="flex-1 items-center justify-center py-10">
                 <Feather name="inbox" size={48} color="#94A3B8" className="mb-4" />
-                <Text className="text-textSecondary text-base text-center">No products found in this category.</Text>
+                <Text className="text-textSecondary text-base text-center">No products found matching your criteria.</Text>
               </View>
             )}
           </View>
         )}
       </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal visible={showFilterModal} transparent animationType="slide">
+        <View className="flex-1 bg-black/40 justify-end">
+          <View className="bg-white rounded-t-3xl pt-6 pb-8 px-6 max-h-[80%]">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-xl font-black text-textPrimary">Filter & Sort</Text>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)} className="w-8 h-8 bg-slate-100 rounded-full items-center justify-center">
+                <Feather name="x" size={18} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} className="mb-6">
+              {/* Sort Section */}
+              <Text className="text-sm font-bold text-textPrimary mb-3 uppercase tracking-wider">Sort By</Text>
+              <View className="flex-row flex-wrap gap-2 mb-6">
+                {[
+                  { id: 'default', label: 'Recommended' },
+                  { id: 'priceAsc', label: 'Price: Low to High' },
+                  { id: 'priceDesc', label: 'Price: High to Low' }
+                ].map(sortOpt => (
+                  <TouchableOpacity
+                    key={sortOpt.id}
+                    className={`px-4 py-2.5 rounded-xl border ${
+                      tempSortOrder === sortOpt.id 
+                        ? 'bg-blue-50 border-accent' 
+                        : 'bg-white border-[#e5e7eb]'
+                    }`}
+                    onPress={() => setTempSortOrder(sortOpt.id as any)}
+                  >
+                    <Text className={`font-semibold ${
+                      tempSortOrder === sortOpt.id ? 'text-accent' : 'text-textSecondary'
+                    }`}>
+                      {sortOpt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Category Section */}
+              <Text className="text-sm font-bold text-textPrimary mb-3 uppercase tracking-wider">Category</Text>
+              <View className="flex-row flex-wrap gap-2 pb-4">
+                <TouchableOpacity
+                  className={`px-4 py-2.5 rounded-xl border ${
+                    tempCategory === undefined
+                      ? 'bg-blue-50 border-accent' 
+                      : 'bg-white border-[#e5e7eb]'
+                  }`}
+                  onPress={() => setTempCategory(undefined)}
+                >
+                  <Text className={`font-semibold ${
+                    tempCategory === undefined ? 'text-accent' : 'text-textSecondary'
+                  }`}>
+                    All Categories
+                  </Text>
+                </TouchableOpacity>
+                
+                {CATEGORIES.map(cat => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    className={`px-4 py-2.5 rounded-xl border flex-row items-center ${
+                      tempCategory === cat.id 
+                        ? 'bg-blue-50 border-accent' 
+                        : 'bg-white border-[#e5e7eb]'
+                    }`}
+                    onPress={() => setTempCategory(cat.id)}
+                  >
+                    <Text className="mr-1.5 text-base">{cat.icon}</Text>
+                    <Text className={`font-semibold ${
+                      tempCategory === cat.id ? 'text-accent' : 'text-textSecondary'
+                    }`}>
+                      {cat.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* Bottom Actions */}
+            <View className="flex-row gap-3 pt-4 border-t border-[#e5e7eb]">
+              <TouchableOpacity 
+                className="flex-1 py-4 bg-slate-100 rounded-2xl items-center justify-center"
+                onPress={clearFilters}
+              >
+                <Text className="font-bold text-textSecondary text-base">Reset</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                className="flex-[2] py-4 bg-accent rounded-2xl items-center justify-center shadow-lg shadow-accent/30"
+                onPress={applyFilters}
+              >
+                <Text className="font-bold text-white text-base">Apply Filters</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

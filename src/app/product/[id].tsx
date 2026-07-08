@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../../stores/cartStore';
@@ -117,22 +117,25 @@ export default function ProductDetailScreen() {
         const productData = docSnap.data();
         const stockId = productData.stockId || productData.productCode;
         
-        // Fetch actual stock from 'products' collection
-        let stock = 0;
+        // Initial set without stock
+        setProduct({ id: docSnap.id, ...productData, stock: 0 });
+        
+        // Listen to actual stock from 'products' collection in real-time
         if (stockId) {
           const stockQ = query(collection(db, 'products'), where('productCode', '==', stockId));
-          const stockSnap = await getDocs(stockQ);
-          if (!stockSnap.empty) {
-            stock = stockSnap.docs[0].data().stock ?? 0;
-          } else {
-            const directStockDoc = await getDoc(doc(db, 'products', stockId));
-            if (directStockDoc.exists()) {
-              stock = directStockDoc.data().stock ?? 0;
+          const unsubscribe = onSnapshot(stockQ, (querySnapshot) => {
+            if (!querySnapshot.empty) {
+              setProduct((prev: any) => ({ ...prev, stock: querySnapshot.docs[0].data().stock ?? 0 }));
+            } else {
+              // Fallback to direct document id check just in case
+              onSnapshot(doc(db, 'products', stockId), (stockDoc) => {
+                if (stockDoc.exists()) {
+                  setProduct((prev: any) => ({ ...prev, stock: stockDoc.data().stock ?? 0 }));
+                }
+              });
             }
-          }
+          });
         }
-        
-        setProduct({ id: docSnap.id, ...productData, stock });
       } else {
         console.log("No such product!");
       }

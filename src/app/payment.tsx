@@ -3,7 +3,7 @@ import { View, ActivityIndicator, Alert, SafeAreaView, TouchableOpacity, Text } 
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { db } from '../services/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, writeBatch, increment } from 'firebase/firestore';
 import { useCartStore } from '../stores/cartStore';
 import { Feather } from '@expo/vector-icons';
 
@@ -77,12 +77,16 @@ export default function PaymentScreen() {
       // Payment successful
       try {
         // Save order as Paid
-        await addDoc(collection(db, 'CustomerOrders'), {
+        const batch = writeBatch(db);
+        const orderRef = doc(collection(db, 'CustomerOrders'));
+        batch.set(orderRef, {
           ...parsedOrderData,
           orderStatus: 'Paid',
           paymentStatus: 'success',
           createdAt: serverTimestamp(),
         });
+
+        await batch.commit();
         clearCart();
         router.replace({
           pathname: '/success' as any,

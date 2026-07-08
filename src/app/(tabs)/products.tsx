@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput, Platform, Modal } from 'react-native';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
 import { useRouter, useGlobalSearchParams, useFocusEffect } from 'expo-router';
@@ -62,19 +62,26 @@ export default function ProductsScreen() {
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      // Fetch stock from 'products' collection
-      const stockSnap = await getDocs(collection(db, 'products'));
-      const stockMap: Record<string, number> = {};
-      stockSnap.forEach(doc => {
-        const d = doc.data();
-        stockMap[d.productCode || doc.id] = d.stock ?? 0;
+      // Fetch stock in real-time
+      const unsubscribeStock = onSnapshot(collection(db, 'products'), (stockSnap) => {
+        const stockMap: Record<string, number> = {};
+        stockSnap.forEach(doc => {
+          const d = doc.data();
+          stockMap[d.productCode || doc.id] = d.stock ?? 0;
+        });
+
+        setProducts(prev => {
+          // If prev is empty, map from items, else map from prev
+          const source = prev.length > 0 ? prev : items;
+          return source.map(p => ({
+            ...p,
+            stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? 0
+          }));
+        });
       });
 
-      const finalItems = items.map(p => ({
-        ...p,
-        stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? 0
-      }));
-      setProducts(finalItems);
+      // Cleanup not strictly managed here for simplicity since it mounts on focus,
+      // but the UI will update in real-time while mounted.
 
       // Fetch ratings
       const ratingsSnapshot = await getDocs(collection(db, 'productRatings'));

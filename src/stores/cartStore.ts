@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../services/firebase';
-import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch, increment, query, where, updateDoc } from 'firebase/firestore';
 
 const getCustomerId = async () => {
   return await AsyncStorage.getItem("userId") ?? null;
@@ -9,6 +9,22 @@ const getCustomerId = async () => {
 
 const normalizeProductId = (product: any) => {
   return String(product.productId || product.productCode || product.id || '').trim();
+};
+
+const updateProductStock = async (stockId: string, delta: number) => {
+  if (!stockId) return;
+  try {
+    const q = query(collection(db, 'products'), where('productCode', '==', stockId));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const docId = snap.docs[0].id;
+      await updateDoc(doc(db, 'products', docId), { stock: increment(delta) });
+    } else {
+      await setDoc(doc(db, 'products', stockId), { stock: increment(delta) }, { merge: true });
+    }
+  } catch (err) {
+    console.error("Error updating stock globally", err);
+  }
 };
 
 interface CartItem {
@@ -77,6 +93,11 @@ export const useCartStore = create<CartStore>((set, get) => ({
         } else {
           await setDoc(itemRef, { qty: newQty }, { merge: true });
         }
+        
+        // Adjust actual stock
+        if (existing.stockId) {
+          await updateProductStock(existing.stockId, -delta);
+        }
       } catch (err) {
         console.error("updateQty error:", err);
         get().fetchItems();
@@ -105,6 +126,12 @@ export const useCartStore = create<CartStore>((set, get) => ({
       const itemRef = doc(db, 'users', customerId, 'cart', productId);
       const finalItem = { ...newItem, id: productId };
       await setDoc(itemRef, finalItem);
+      
+      // Deduct stock for new item
+      if (newItem.stockId) {
+        await updateProductStock(newItem.stockId, -initialQty);
+      }
+
       set((state) => ({ 
         items: state.items.map(i => i.id === tempId ? finalItem : i) 
       }));
@@ -116,6 +143,8 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   removeItem: async (firestoreId: string) => {
     const customerId = await getCustomerId();
+    const itemToRemove = get().items.find(i => i.id === firestoreId);
+    
     set((state) => ({
       items: state.items.filter((i) => i.id !== firestoreId),
     }));
@@ -123,6 +152,11 @@ export const useCartStore = create<CartStore>((set, get) => ({
     if (customerId) {
       try {
         await deleteDoc(doc(db, 'users', customerId, 'cart', firestoreId));
+        
+        // Restore stock when removing from cart
+        if (itemToRemove && itemToRemove.stockId) {
+          await updateProductStock(itemToRemove.stockId, itemToRemove.qty);
+        }
       } catch (err) {
         console.error("removeItem error:", err);
         get().fetchItems();
@@ -130,10 +164,11 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }
   },
 
-  clearCart: async () => {
+  clearCart: async (restoreStock: boolean = false) => {
     const customerId = await getCustomerId();
     if (!customerId) return console.error("No customerId found");
 
+    const currentItems = [...get().items];
     set({ items: [] });
 
     try {
@@ -143,6 +178,16 @@ export const useCartStore = create<CartStore>((set, get) => ({
       snap.docs.forEach(d => {
         batch.delete(d.ref);
       });
+      
+      // If manually clearing cart, restore stock for all items
+      if (restoreStock) {
+        for (const item of currentItems) {
+          if (item.stockId) {
+            await updateProductStock(item.stockId, item.qty);
+          }
+        }
+      }
+      
       await batch.commit();
     } catch (err) {
       console.error("clearCart error:", err);

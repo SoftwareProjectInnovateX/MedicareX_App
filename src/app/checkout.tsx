@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../stores/cartStore';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, writeBatch, increment } from 'firebase/firestore';
 import { DISTRICTS_CITIES } from '../constants/locations';
 import * as Crypto from 'expo-crypto';
 
@@ -182,7 +182,11 @@ export default function CheckoutScreen() {
       }
 
       if (formData.paymentMethod === 'COD') {
-        await addDoc(collection(db, 'CustomerOrders'), orderData);
+        const batch = writeBatch(db);
+        const newOrderRef = doc(collection(db, 'CustomerOrders'));
+        batch.set(newOrderRef, orderData);
+
+        await batch.commit();
         clearCart();
         router.replace({
           pathname: '/success' as any,

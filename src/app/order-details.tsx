@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Alert, Activity
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { db } from '../services/firebase';
-import { deleteDoc, doc } from 'firebase/firestore';
+import { deleteDoc, doc, updateDoc, writeBatch, increment, getDocs, query, collection, where, setDoc } from 'firebase/firestore';
 
 export default function OrderDetailsScreen() {
   const router = useRouter();
@@ -38,6 +38,57 @@ export default function OrderDetailsScreen() {
     if (s === 'approved') return 'bg-emerald-100 text-emerald-700';
     if (s === 'pending' || s === 'pending-cod') return 'bg-orange-100 text-orange-700';
     return 'bg-blue-100 text-blue-700';
+  };
+
+  const handleCancel = () => {
+    Alert.alert(
+      "Cancel Order",
+      "Are you sure you want to cancel this order?",
+      [
+        { text: "No", style: "cancel" },
+        { 
+          text: "Yes, Cancel", 
+          style: "destructive",
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              const collectionName = isPrescription ? 'prescriptions' : 'CustomerOrders';
+              const batch = writeBatch(db);
+              
+              // Restore stock
+              if (itemsList && Array.isArray(itemsList)) {
+                for (const item of itemsList) {
+                  const sId = item.stockId || item.productId || item.id;
+                  if (sId) {
+                    const q = query(collection(db, 'products'), where('productCode', '==', sId));
+                    const snap = await getDocs(q);
+                    if (!snap.empty) {
+                      const docId = snap.docs[0].id;
+                      await updateDoc(doc(db, 'products', docId), { stock: increment(item.qty || item.quantity || 1) });
+                    } else {
+                      await setDoc(doc(db, 'products', sId), { stock: increment(item.qty || item.quantity || 1) }, { merge: true });
+                    }
+                  }
+                }
+              }
+
+              // Also need to use updateDoc for the order status directly instead of writeBatch,
+              // since we are using await getDocs inside the loop, we shouldn't mix batch and await heavily here.
+              await updateDoc(doc(db, collectionName, order.id), {
+                orderStatus: 'Canceled'
+              });
+
+              Alert.alert("Canceled", "Order has been canceled and stock restored.");
+              router.back();
+            } catch (error) {
+              console.error("Error canceling order:", error);
+              Alert.alert("Error", "Could not cancel order.");
+              setIsDeleting(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleDelete = () => {
@@ -184,21 +235,38 @@ export default function OrderDetailsScreen() {
           </View>
         </View>
 
-        {/* Delete Button */}
-        <TouchableOpacity 
-          onPress={handleDelete}
-          disabled={isDeleting}
-          className="w-full bg-red-50 border border-red-200 py-4 rounded-xl flex-row items-center justify-center mb-8"
-        >
-          {isDeleting ? (
-            <ActivityIndicator color="#ef4444" size="small" />
-          ) : (
-            <>
-              <Feather name="trash-2" size={18} color="#ef4444" className="mr-2" />
-              <Text className="text-red-600 font-bold uppercase tracking-wider text-sm">Delete Order</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        {/* Actions */}
+        {order.orderStatus === 'Pending' || order.orderStatus === 'Pending-COD' ? (
+          <TouchableOpacity 
+            onPress={handleCancel}
+            disabled={isDeleting}
+            className="w-full bg-orange-50 border border-orange-200 py-4 rounded-xl flex-row items-center justify-center mb-8"
+          >
+            {isDeleting ? (
+              <ActivityIndicator color="#ea580c" size="small" />
+            ) : (
+              <>
+                <Feather name="x-circle" size={18} color="#ea580c" className="mr-2" />
+                <Text className="text-orange-600 font-bold uppercase tracking-wider text-sm">Cancel Order</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            onPress={handleDelete}
+            disabled={isDeleting}
+            className="w-full bg-red-50 border border-red-200 py-4 rounded-xl flex-row items-center justify-center mb-8"
+          >
+            {isDeleting ? (
+              <ActivityIndicator color="#ef4444" size="small" />
+            ) : (
+              <>
+                <Feather name="trash-2" size={18} color="#ef4444" className="mr-2" />
+                <Text className="text-red-600 font-bold uppercase tracking-wider text-sm">Delete Order</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
 
       </ScrollView>
     </SafeAreaView>

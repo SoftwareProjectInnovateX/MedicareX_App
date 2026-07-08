@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput, Platform, Modal } from 'react-native';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
-import { useRouter, useGlobalSearchParams } from 'expo-router';
+import { useRouter, useGlobalSearchParams, useFocusEffect } from 'expo-router';
 import { CATEGORIES } from '../../constants/categories';
 
 export default function ProductsScreen() {
@@ -14,6 +14,7 @@ export default function ProductsScreen() {
   const [products, setProducts] = useState<any[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [productRatings, setProductRatings] = useState<Record<string, {avg: number, count: number}>>({});
   const [searchQuery, setSearchQuery] = useState('');
   
   // Filter states
@@ -44,13 +45,15 @@ export default function ProductsScreen() {
     }
   }, [initialCategory]);
 
-  useEffect(() => {
-    if (user) {
-      fetchProducts();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        fetchProducts();
+      } else {
+        setLoading(false);
+      }
+    }, [user])
+  );
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -59,6 +62,29 @@ export default function ProductsScreen() {
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(items);
+
+      // Fetch ratings
+      const ratingsSnapshot = await getDocs(collection(db, 'productRatings'));
+      const ratingsMap: Record<string, { sum: number, count: number }> = {};
+      
+      ratingsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.productId && data.rating > 0) {
+          const pid = String(data.productId);
+          if (!ratingsMap[pid]) ratingsMap[pid] = { sum: 0, count: 0 };
+          ratingsMap[pid].sum += data.rating;
+          ratingsMap[pid].count += 1;
+        }
+      });
+
+      const finalRatings: Record<string, {avg: number, count: number}> = {};
+      Object.keys(ratingsMap).forEach(key => {
+        finalRatings[key] = {
+          avg: ratingsMap[key].sum / ratingsMap[key].count,
+          count: ratingsMap[key].count
+        };
+      });
+      setProductRatings(finalRatings);
     } catch (error) {
       console.error("Error fetching products", error);
     } finally {
@@ -66,7 +92,7 @@ export default function ProductsScreen() {
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     let result = [...products];
     if (selectedCategory) {
       result = result.filter(p => p.category === selectedCategory);
@@ -193,9 +219,25 @@ export default function ProductsScreen() {
                     )}
                   </View>
                   <Text className="font-bold text-textPrimary mb-1" numberOfLines={2}>{product.name || product.productName}</Text>
-                  <Text className="text-xs text-textSecondary mb-2" numberOfLines={1}>
+                  <Text className="text-xs text-textSecondary mb-1.5" numberOfLines={1}>
                     {CATEGORIES.find(c => c.id === product.category)?.name || product.category}
                   </Text>
+                  
+                  {/* Rating Stars */}
+                  <View className="flex-row items-center mb-2">
+                    <View className="flex-row mr-1">
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const avg = productRatings[product.id]?.avg || 0;
+                        let iconName = "star-outline";
+                        if (avg >= star) iconName = "star";
+                        else if (avg >= star - 0.5) iconName = "star-half";
+                        return <Ionicons key={star} name={iconName as any} size={12} color="#f59e0b" />;
+                      })}
+                    </View>
+                    <Text className="text-[10px] text-textSecondary">
+                      ({productRatings[product.id]?.count || 0})
+                    </Text>
+                  </View>
                   
                   <View className="flex-row justify-between items-center mt-auto">
                     <Text className="text-accent font-bold text-lg">Rs. {product.retailPrice || product.price}</Text>

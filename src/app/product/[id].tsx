@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useCartStore } from '../../stores/cartStore';
+import { useAuth } from '../../context/AuthContext';
 import { CATEGORIES } from '../../constants/categories';
 
 export default function ProductDetailScreen() {
@@ -13,8 +14,15 @@ export default function ProductDetailScreen() {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
+  const { user } = useAuth();
   const addItem = useCartStore(state => state.addItem);
   const cartItemsCount = useCartStore(state => state.items).length;
+
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [ratingSummary, setRatingSummary] = useState({ avg: 0, count: 0 });
+  const [newComment, setNewComment] = useState('');
+  const [newRating, setNewRating] = useState(0);
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   // Helper for physical device & emulator localhost image resolution
   const formatImageUrl = (url?: string) => {
@@ -26,8 +34,80 @@ export default function ProductDetailScreen() {
   useEffect(() => {
     if (id) {
       fetchProductDetails();
+      fetchReviews();
     }
   }, [id]);
+
+  const fetchReviews = async () => {
+    try {
+      const q = query(collection(db, 'productRatings'), where('productId', '==', String(id)));
+      const snap = await getDocs(q);
+      const fetchedReviews = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      let sum = 0;
+      let count = 0;
+      fetchedReviews.forEach((r: any) => {
+        if (r.rating > 0) {
+          sum += r.rating;
+          count += 1;
+        }
+      });
+      
+      setRatingSummary({ avg: count > 0 ? sum / count : 0, count });
+      // sort by date descending
+      fetchedReviews.sort((a, b) => {
+        const da = a.createdAt?.seconds || 0;
+        const db = b.createdAt?.seconds || 0;
+        return db - da;
+      });
+      setReviews(fetchedReviews);
+    } catch (error) {
+      console.error("Error fetching reviews", error);
+    }
+  };
+
+  const submitReview = async () => {
+    if (!user) {
+      alert("Please login to submit a review.");
+      return;
+    }
+    if (newRating === 0) {
+      alert("Please select a star rating.");
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      const payload = {
+        productId: String(id),
+        productName: product?.name || product?.productName || '',
+        userId: user.uid,
+        customerName: user.displayName || user.email?.split('@')[0] || 'Customer',
+        customerEmail: user.email || '',
+        comment: newComment.trim(),
+        rating: newRating,
+        helpful: 0,
+        createdAt: serverTimestamp(),
+      };
+      const ref = await addDoc(collection(db, 'productRatings'), payload);
+      
+      // Update local state instantly
+      const newReview = { id: ref.id, ...payload, createdAt: { seconds: Date.now() / 1000 } };
+      setReviews([newReview, ...reviews]);
+      
+      const newCount = ratingSummary.count + 1;
+      const newAvg = ((ratingSummary.avg * ratingSummary.count) + newRating) / newCount;
+      setRatingSummary({ avg: newAvg, count: newCount });
+      
+      setNewComment('');
+      setNewRating(0);
+      alert("Review submitted successfully!");
+    } catch (error) {
+      console.error("Error submitting review", error);
+      alert("Failed to submit review.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const fetchProductDetails = async () => {
     try {
@@ -126,6 +206,15 @@ export default function ProductDetailScreen() {
 
           <Text className="text-3xl font-extrabold text-textPrimary mb-2 leading-tight">{product.name || product.productName}</Text>
           
+          {/* Rating Summary Display */}
+          <View className="flex-row items-center mb-4">
+            <View className="flex-row items-center bg-orange-50 px-2 py-1 rounded-md mr-2">
+              <Text className="font-bold text-orange-600 mr-1">{ratingSummary.avg.toFixed(1)}</Text>
+              <Ionicons name="star" size={14} color="#ea580c" />
+            </View>
+            <Text className="text-textSecondary text-sm">{ratingSummary.count} {ratingSummary.count === 1 ? 'Review' : 'Reviews'}</Text>
+          </View>
+
           <Text className="text-2xl font-bold text-accent mb-6">Rs. {price}</Text>
 
           <View className="mb-6">
@@ -147,6 +236,72 @@ export default function ProductDetailScreen() {
               </View>
             </View>
           )}
+
+          {/* Ratings & Reviews Section */}
+          <View className="mt-4 mb-8">
+            <Text className="text-lg font-bold text-textPrimary mb-4">Ratings & Reviews</Text>
+            
+            {/* Review Form */}
+            <View className="bg-white p-4 rounded-2xl border border-slate-200 mb-6 shadow-sm">
+              <Text className="text-base font-bold text-slate-800 mb-2">Write a Review</Text>
+              <View className="flex-row mb-3">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity key={star} onPress={() => setNewRating(star)} className="mr-2">
+                    <Ionicons 
+                      name={star <= newRating ? "star" : "star-outline"} 
+                      size={28} 
+                      color={star <= newRating ? "#f59e0b" : "#cbd5e1"} 
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {/* @ts-ignore */}
+              <TextInput
+                value={newComment}
+                onChangeText={setNewComment}
+                placeholder="Share your experience with this product..."
+                placeholderTextColor="#94a3b8"
+                multiline
+                numberOfLines={3}
+                className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 mb-3"
+                style={{ minHeight: 80, textAlignVertical: 'top' }}
+              />
+              <TouchableOpacity 
+                onPress={submitReview}
+                disabled={submittingReview}
+                className={`py-3 rounded-xl items-center ${submittingReview ? 'bg-slate-300' : 'bg-accent'}`}
+              >
+                <Text className="text-white font-bold">{submittingReview ? 'Submitting...' : 'Submit Review'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Review List */}
+            {reviews.filter(r => r.comment && r.comment.trim() !== '').length === 0 ? (
+              <Text className="text-slate-500 italic text-center py-4">No text reviews yet. Be the first to leave a feedback!</Text>
+            ) : (
+              reviews.filter(r => r.comment && r.comment.trim() !== '').map((review, idx) => (
+                <View key={review.id || idx} className="bg-white p-4 rounded-2xl border border-slate-100 mb-3">
+                  <View className="flex-row justify-between items-center mb-2">
+                    <Text className="font-bold text-slate-800">{review.customerName}</Text>
+                    <View className="flex-row">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Ionicons 
+                          key={star} 
+                          name={star <= review.rating ? "star" : "star-outline"} 
+                          size={12} 
+                          color="#f59e0b" 
+                        />
+                      ))}
+                    </View>
+                  </View>
+                  <Text className="text-sm text-slate-600">{review.comment}</Text>
+                  <Text className="text-[10px] text-slate-400 mt-2">
+                    {review.createdAt?.seconds ? new Date(review.createdAt.seconds * 1000).toLocaleDateString() : 'Just now'}
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
         </View>
       </ScrollView>
 

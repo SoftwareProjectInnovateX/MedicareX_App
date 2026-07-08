@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Linking, Dimensions, FlatList, Platform } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -59,6 +59,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
+  const [productRatings, setProductRatings] = useState<Record<string, {avg: number, count: number}>>({});
   const { address } = useLocationStore();
   
   const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
@@ -81,21 +82,47 @@ export default function HomeScreen() {
   const cartItems = useCartStore(state => state.items);
   const cartCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
 
-  useEffect(() => {
-    if (user) {
-      fetchProducts();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        fetchProducts();
+      } else {
+        setLoading(false);
+      }
+    }, [user])
+  );
 
   const fetchProducts = async () => {
     try {
-      // We fetch products from pharmacistProducts where visibility is customer to get the correct images
+      // Fetch products
       const q = query(collection(db, 'pharmacistProducts'), where('visibility', '==', 'customer'));
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(items);
+
+      // Fetch ratings
+      const ratingsSnapshot = await getDocs(collection(db, 'productRatings'));
+      const ratingsMap: Record<string, { sum: number, count: number }> = {};
+      
+      ratingsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.productId && data.rating > 0) {
+          const pid = String(data.productId);
+          if (!ratingsMap[pid]) ratingsMap[pid] = { sum: 0, count: 0 };
+          ratingsMap[pid].sum += data.rating;
+          ratingsMap[pid].count += 1;
+        }
+      });
+
+      const finalRatings: Record<string, {avg: number, count: number}> = {};
+      Object.keys(ratingsMap).forEach(key => {
+        finalRatings[key] = {
+          avg: ratingsMap[key].sum / ratingsMap[key].count,
+          count: ratingsMap[key].count
+        };
+      });
+      setProductRatings(finalRatings);
+      
     } catch (error) {
       console.error("Error fetching products", error);
     } finally {
@@ -108,12 +135,16 @@ export default function HomeScreen() {
       {/* Top Brand Header */}
       <View className="pt-14 pb-3 bg-white px-6 flex-row justify-between items-center shadow-sm z-10">
         <View className="flex-row items-center">
-          <View className="bg-accent p-2 rounded-xl mr-3 shadow-sm">
-            <MaterialCommunityIcons name="shield-plus" color="#ffffff" size={24} />
+          <View className="mr-2" style={{ width: 42, height: 42, borderRadius: 21, borderWidth: 2, borderColor: 'rgba(26,135,225,0.22)', overflow: 'hidden' }}>
+            <Image 
+              source={require('../../../assets/images/logo.png')} 
+              style={{ width: '100%', height: '100%' }} 
+              resizeMode="cover" 
+            />
           </View>
           <View>
-            <Text className="text-xl font-extrabold text-textPrimary tracking-tight">MedicareX</Text>
-            <Text className="text-[10px] text-accent font-bold uppercase tracking-widest">Pharmacy</Text>
+            <Text className="text-xl font-extrabold text-[#0f2a5e] tracking-tight" style={{ lineHeight: 22 }}>MediCareX</Text>
+            <Text className="text-[10px] text-[#64748b] font-bold tracking-widest mt-0.5">Your Smart Pharmacy</Text>
           </View>
         </View>
         <View className="flex-row items-center space-x-5">
@@ -360,9 +391,26 @@ export default function HomeScreen() {
                       )}
                     </View>
                     <Text className="font-bold text-textPrimary mb-1" numberOfLines={1}>{product.name || product.productName}</Text>
-                    <Text className="text-xs text-textSecondary mb-2" numberOfLines={1}>
+                    <Text className="text-xs text-textSecondary mb-1.5" numberOfLines={1}>
                       {CATEGORIES.find(c => c.id === product.category)?.name || product.category}
                     </Text>
+                    
+                    {/* Rating Stars */}
+                    <View className="flex-row items-center mb-2">
+                      <View className="flex-row mr-1">
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const avg = productRatings[product.id]?.avg || 0;
+                          let iconName = "star-outline";
+                          if (avg >= star) iconName = "star";
+                          else if (avg >= star - 0.5) iconName = "star-half";
+                          return <Ionicons key={star} name={iconName as any} size={12} color="#f59e0b" />;
+                        })}
+                      </View>
+                      <Text className="text-[10px] text-textSecondary">
+                        ({productRatings[product.id]?.count || 0})
+                      </Text>
+                    </View>
+
                     
                     <View className="flex-row justify-between items-center mt-auto">
                       <Text className="text-accent font-bold text-lg">Rs. {product.retailPrice || product.price}</Text>

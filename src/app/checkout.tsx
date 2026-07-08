@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../stores/cartStore';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { DISTRICTS_CITIES } from '../constants/locations';
 import * as Crypto from 'expo-crypto';
 
@@ -33,6 +33,9 @@ export default function CheckoutScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [saveAddressToBook, setSaveAddressToBook] = useState(false);
+  
   // For custom dropdowns
   const [districtModalVisible, setDistrictModalVisible] = useState(false);
   const [cityModalVisible, setCityModalVisible] = useState(false);
@@ -54,6 +57,10 @@ export default function CheckoutScreen() {
               laneStreet: prev.laneStreet || data.laneStreet || '',
               phone: prev.phone || data.phone || '',
             }));
+            
+            if (data.savedAddresses && Array.isArray(data.savedAddresses)) {
+              setSavedAddresses(data.savedAddresses);
+            }
           }
         } catch (err) {
           console.log("Error fetching user data", err);
@@ -151,6 +158,29 @@ export default function CheckoutScreen() {
         createdAt: serverTimestamp(),
       };
 
+      if (user?.uid && saveAddressToBook) {
+        try {
+          const newAddress = {
+            id: Date.now().toString(),
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formData.phone,
+            district: formData.district,
+            city: formData.city,
+            houseNumber: formData.houseNumber,
+            laneStreet: formData.laneStreet,
+          };
+          
+          setSavedAddresses(prev => [...prev, newAddress]);
+          
+          await setDoc(doc(db, 'users', user.uid), {
+            savedAddresses: [...savedAddresses, newAddress]
+          }, { merge: true });
+        } catch (err) {
+          console.error("Error saving address:", err);
+        }
+      }
+
       if (formData.paymentMethod === 'COD') {
         await addDoc(collection(db, 'CustomerOrders'), orderData);
         clearCart();
@@ -240,6 +270,46 @@ export default function CheckoutScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <ScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: 60 }}>
           
+          {/* Saved Addresses Section */}
+          {savedAddresses.length > 0 && (
+            <View className="mb-6">
+              <Text className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Address Book</Text>
+              <Text className="font-black text-slate-900 text-xl mb-4">Saved Addresses</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="overflow-visible pb-2 -mx-4 px-4">
+                {savedAddresses.map((addr) => (
+                  <TouchableOpacity
+                    key={addr.id}
+                    className="bg-white p-4 rounded-2xl border border-[#e5e7eb] shadow-sm mr-4 w-64"
+                    onPress={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        firstName: addr.firstName || prev.firstName,
+                        lastName: addr.lastName || prev.lastName,
+                        phone: addr.phone || prev.phone,
+                        district: addr.district || prev.district,
+                        city: addr.city || prev.city,
+                        houseNumber: addr.houseNumber || prev.houseNumber,
+                        laneStreet: addr.laneStreet || prev.laneStreet,
+                      }));
+                      setSaveAddressToBook(false); // No need to save if picking an existing one
+                    }}
+                  >
+                    <View className="flex-row items-center mb-2">
+                      <Feather name="map-pin" size={16} color="#1a87e1" />
+                      <Text className="font-bold text-slate-800 ml-2" numberOfLines={1}>
+                        {addr.firstName} {addr.lastName}
+                      </Text>
+                    </View>
+                    <Text className="text-slate-600 text-xs mb-1" numberOfLines={2}>
+                      {addr.houseNumber}, {addr.laneStreet}, {addr.city}
+                    </Text>
+                    <Text className="text-slate-500 text-xs">{addr.phone}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Billing Details */}
           <View className="bg-white rounded-2xl p-6 shadow-sm border border-[#e5e7eb] mb-6">
             <Text className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Information</Text>
@@ -360,6 +430,19 @@ export default function CheckoutScreen() {
                 textAlignVertical="top"
               />
             </View>
+
+            {/* Save Address Toggle */}
+            {user?.uid && (
+              <TouchableOpacity 
+                className={`flex-row items-center mt-2 p-4 rounded-xl border ${saveAddressToBook ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}
+                onPress={() => setSaveAddressToBook(!saveAddressToBook)}
+              >
+                <View className={`w-5 h-5 rounded border items-center justify-center mr-3 ${saveAddressToBook ? 'bg-accent border-accent' : 'border-slate-300 bg-white'}`}>
+                  {saveAddressToBook && <Feather name="check" size={14} color="#ffffff" />}
+                </View>
+                <Text className="flex-1 text-slate-700 font-medium">Save this address to my Address Book</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Order Summary */}

@@ -61,7 +61,20 @@ export default function ProductsScreen() {
       const q = query(collection(db, 'pharmacistProducts'), where('visibility', '==', 'customer'));
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(items);
+
+      // Fetch stock from 'products' collection
+      const stockSnap = await getDocs(collection(db, 'products'));
+      const stockMap: Record<string, number> = {};
+      stockSnap.forEach(doc => {
+        const d = doc.data();
+        stockMap[d.productCode || doc.id] = d.stock ?? 0;
+      });
+
+      const finalItems = items.map(p => ({
+        ...p,
+        stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? 0
+      }));
+      setProducts(finalItems);
 
       // Fetch ratings
       const ratingsSnapshot = await getDocs(collection(db, 'productRatings'));
@@ -238,11 +251,19 @@ export default function ProductsScreen() {
                       ({productRatings[product.id]?.count || 0})
                     </Text>
                   </View>
+                  {/* Stock Info */}
+                  <Text className={`text-[11px] font-bold mb-1 ${(product.stock || 0) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {(product.stock || 0) > 0 ? `In Stock: ${product.stock}` : 'Out of Stock'}
+                  </Text>
                   
                   <View className="flex-row justify-between items-center mt-auto">
                     <Text className="text-accent font-bold text-lg">Rs. {product.retailPrice || product.price}</Text>
                     
-                    {cartItem ? (
+                    {(product.stock || 0) <= 0 ? (
+                      <View className="bg-slate-200 w-8 h-8 rounded-full items-center justify-center">
+                        <Feather name="slash" color="#94a3b8" size={16} />
+                      </View>
+                    ) : cartItem ? (
                       <View className="flex-row items-center bg-accent rounded-full h-8">
                         <TouchableOpacity 
                           onPress={() => addItem(product, -1)} 
@@ -252,8 +273,8 @@ export default function ProductsScreen() {
                         </TouchableOpacity>
                         <Text className="text-white font-bold px-1 text-sm">{cartItem.qty}</Text>
                         <TouchableOpacity 
-                          onPress={() => addItem(product, 1)} 
-                          className="w-8 h-8 items-center justify-center"
+                          onPress={() => cartItem.qty < (product.stock || 0) && addItem(product, 1)} 
+                          className={`w-8 h-8 items-center justify-center ${cartItem.qty >= (product.stock || 0) ? 'opacity-50' : ''}`}
                         >
                           <Feather name="plus" color="#ffffff" size={14} />
                         </TouchableOpacity>
@@ -346,7 +367,12 @@ export default function ProductsScreen() {
                     }`}
                     onPress={() => setTempCategory(cat.id)}
                   >
-                    <Text className="mr-1.5 text-base">{cat.icon}</Text>
+                    <MaterialCommunityIcons 
+                      name={cat.vectorIcon as any} 
+                      size={18} 
+                      color={tempCategory === cat.id ? '#1a87e1' : '#64748B'} 
+                      style={{ marginRight: 6 }} 
+                    />
                     <Text className={`font-semibold ${
                       tempCategory === cat.id ? 'text-accent' : 'text-textSecondary'
                     }`}>

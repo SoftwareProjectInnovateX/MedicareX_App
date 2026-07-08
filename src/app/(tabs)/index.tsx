@@ -98,7 +98,21 @@ export default function HomeScreen() {
       const q = query(collection(db, 'pharmacistProducts'), where('visibility', '==', 'customer'));
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(items);
+
+      // Fetch stock from 'products' collection
+      const stockSnap = await getDocs(collection(db, 'products'));
+      const stockMap: Record<string, number> = {};
+      stockSnap.forEach(doc => {
+        const d = doc.data();
+        stockMap[d.productCode || doc.id] = d.stock ?? 0;
+      });
+
+      const finalItems = items.map(p => ({
+        ...p,
+        stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? 0
+      }));
+      
+      setProducts(finalItems);
 
       // Fetch ratings
       const ratingsSnapshot = await getDocs(collection(db, 'productRatings'));
@@ -411,15 +425,25 @@ export default function HomeScreen() {
                       </Text>
                     </View>
 
-                    
+                    {/* Stock Info */}
+                    <Text className={`text-[11px] font-bold mb-1 ${(product.stock || 0) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      {(product.stock || 0) > 0 ? `In Stock: ${product.stock}` : 'Out of Stock'}
+                    </Text>
+
                     <View className="flex-row justify-between items-center mt-auto">
                       <Text className="text-accent font-bold text-lg">Rs. {product.retailPrice || product.price}</Text>
-                      <TouchableOpacity 
-                        className="bg-accent w-8 h-8 rounded-full items-center justify-center"
-                        onPress={() => useCartStore.getState().addItem(product)}
-                      >
-                        <Feather name="plus" color="#ffffff" size={20} />
-                      </TouchableOpacity>
+                      {(product.stock || 0) > 0 ? (
+                        <TouchableOpacity 
+                          className="bg-accent w-8 h-8 rounded-full items-center justify-center"
+                          onPress={() => useCartStore.getState().addItem(product)}
+                        >
+                          <Feather name="plus" color="#ffffff" size={20} />
+                        </TouchableOpacity>
+                      ) : (
+                        <View className="bg-slate-200 w-8 h-8 rounded-full items-center justify-center">
+                          <Feather name="slash" color="#94a3b8" size={16} />
+                        </View>
+                      )}
                     </View>
                   </TouchableOpacity>
                 ))}

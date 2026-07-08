@@ -18,18 +18,34 @@ export default function ProfileScreen() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  const [ordersCount, setOrdersCount] = useState(0);
+  const [prescriptionsCount, setPrescriptionsCount] = useState(0);
 
   // Listen to user document in real-time to get the latest name and photo
   useEffect(() => {
     if (user?.uid) {
       const userRef = doc(db, 'users', user.uid);
-      const unsub = onSnapshot(userRef, (docSnap) => {
+      const unsubUser = onSnapshot(userRef, (docSnap) => {
         if (docSnap.exists()) {
           setUserData(docSnap.data());
           setEditName(docSnap.data().fullName || docSnap.data().name || '');
         }
       });
-      return () => unsub();
+      
+      const { collection, query, where } = require('firebase/firestore');
+      
+      const qOrders = query(collection(db, 'CustomerOrders'), where('userId', '==', user.uid));
+      const unsubOrders = onSnapshot(qOrders, (snap) => setOrdersCount(snap.size));
+      
+      const qPres = query(collection(db, 'prescriptions'), where('userId', '==', user.uid));
+      const unsubPres = onSnapshot(qPres, (snap) => setPrescriptionsCount(snap.size));
+      
+      return () => {
+        unsubUser();
+        unsubOrders();
+        unsubPres();
+      };
     }
   }, [user]);
 
@@ -153,11 +169,11 @@ export default function ProfileScreen() {
         {/* Stats/Quick Info */}
         <View className="flex-row justify-between px-6 mt-[-20px] mb-6">
           <View className="bg-white rounded-2xl p-4 flex-1 mr-2 shadow-sm items-center border border-[#e5e7eb]">
-            <Text className="text-accent font-bold text-2xl mb-1">12</Text>
+            <Text className="text-accent font-bold text-2xl mb-1">{ordersCount}</Text>
             <Text className="text-textSecondary text-xs font-medium">Orders</Text>
           </View>
           <View className="bg-white rounded-2xl p-4 flex-1 ml-2 shadow-sm items-center border border-[#e5e7eb]">
-            <Text className="text-accent font-bold text-2xl mb-1">3</Text>
+            <Text className="text-accent font-bold text-2xl mb-1">{prescriptionsCount}</Text>
             <Text className="text-textSecondary text-xs font-medium">Prescriptions</Text>
           </View>
         </View>

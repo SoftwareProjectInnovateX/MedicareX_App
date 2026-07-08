@@ -114,7 +114,25 @@ export default function ProductDetailScreen() {
       const docRef = doc(db, 'pharmacistProducts', id as string);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setProduct({ id: docSnap.id, ...docSnap.data() });
+        const productData = docSnap.data();
+        const stockId = productData.stockId || productData.productCode;
+        
+        // Fetch actual stock from 'products' collection
+        let stock = 0;
+        if (stockId) {
+          const stockQ = query(collection(db, 'products'), where('productCode', '==', stockId));
+          const stockSnap = await getDocs(stockQ);
+          if (!stockSnap.empty) {
+            stock = stockSnap.docs[0].data().stock ?? 0;
+          } else {
+            const directStockDoc = await getDoc(doc(db, 'products', stockId));
+            if (directStockDoc.exists()) {
+              stock = directStockDoc.data().stock ?? 0;
+            }
+          }
+        }
+        
+        setProduct({ id: docSnap.id, ...productData, stock });
       } else {
         console.log("No such product!");
       }
@@ -215,7 +233,15 @@ export default function ProductDetailScreen() {
             <Text className="text-textSecondary text-sm">{ratingSummary.count} {ratingSummary.count === 1 ? 'Review' : 'Reviews'}</Text>
           </View>
 
-          <Text className="text-2xl font-bold text-accent mb-6">Rs. {price}</Text>
+          <Text className="text-2xl font-bold text-accent mb-2">Rs. {price}</Text>
+
+          {/* Stock Info */}
+          <View className={`flex-row items-center px-3 py-1.5 rounded-full self-start mb-6 ${(product.stock || 0) > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+            <Feather name={(product.stock || 0) > 0 ? 'check-circle' : 'slash'} color={(product.stock || 0) > 0 ? '#16a34a' : '#ef4444'} size={14} />
+            <Text className={`ml-1.5 font-bold text-sm ${(product.stock || 0) > 0 ? 'text-green-700' : 'text-red-600'}`}>
+              {(product.stock || 0) > 0 ? `In Stock: ${product.stock} units` : 'Out of Stock'}
+            </Text>
+          </View>
 
           <View className="mb-6">
             <Text className="text-lg font-bold text-textPrimary mb-2">Description</Text>
@@ -316,21 +342,27 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
           <Text className="w-10 text-center font-bold text-lg text-textPrimary">{qty}</Text>
           <TouchableOpacity 
-            className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm"
-            onPress={() => setQty(prev => prev + 1)}
+            className={`w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm ${qty >= (product.stock || 0) ? 'opacity-50' : ''}`}
+            onPress={() => setQty(prev => prev < (product.stock || 0) ? prev + 1 : prev)}
+            disabled={qty >= (product.stock || 0)}
           >
             <Feather name="plus" color="#1E293B" size={20} />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity 
-          className="flex-1 ml-6 bg-accent h-14 rounded-full flex-row items-center justify-center shadow-md shadow-accent/30"
+          className={`flex-1 ml-6 h-14 rounded-full flex-row items-center justify-center shadow-md ${(product.stock || 0) > 0 ? 'bg-accent shadow-accent/30' : 'bg-slate-300 shadow-slate-300'}`}
           onPress={() => {
-            addItem(product, qty);
+            if ((product.stock || 0) > 0) {
+              addItem(product, qty);
+            }
           }}
+          disabled={(product.stock || 0) <= 0}
         >
-          <Feather name="shopping-bag" color="#ffffff" size={20} />
-          <Text className="text-white font-bold text-lg ml-2">Add to Cart</Text>
+          <Feather name={(product.stock || 0) > 0 ? 'shopping-bag' : 'slash'} color={(product.stock || 0) > 0 ? '#ffffff' : '#64748b'} size={20} />
+          <Text className={`font-bold text-lg ml-2 ${(product.stock || 0) > 0 ? 'text-white' : 'text-slate-500'}`}>
+            {(product.stock || 0) > 0 ? 'Add to Cart' : 'Out of Stock'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

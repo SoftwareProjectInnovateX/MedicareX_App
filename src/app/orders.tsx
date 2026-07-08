@@ -39,7 +39,7 @@ const OrderCard = ({ order }: { order: any }) => {
             {order.type === 'prescription' ? 'PRESCRIPTION' : 'ORDER'} #{order.id?.slice(-6) || '---'}
           </Text>
           <Text className="text-lg font-bold text-textPrimary mt-1">
-            {order.type === 'prescription' ? 'Rx Request' : `${order.types?.length || 0} Items`}
+            {order.type === 'prescription' ? 'Rx Request' : `${(order.items || order.types)?.length || 0} Items`}
           </Text>
         </View>
         <View className={`px-3 py-1 rounded-full ${
@@ -67,10 +67,10 @@ const OrderCard = ({ order }: { order: any }) => {
         </View>
       )}
 
-      {order.type === 'regular' && order.types && order.types.length > 0 && (
+      {order.type === 'regular' && (order.items || order.types) && (order.items || order.types).length > 0 && (
          <View className="mb-3">
             <Text className="text-xs text-slate-600 mb-1" numberOfLines={1}>
-              {order.types.map((t: any) => t.productName || t.name).join(', ')}
+              {(order.items || order.types).map((t: any) => t.productName || t.name).join(', ')}
             </Text>
          </View>
       )}
@@ -92,10 +92,13 @@ const OrderCard = ({ order }: { order: any }) => {
             </Pressable>
           </View>
         ) : (
-          <View className="flex-row items-center bg-accentLight px-4 py-2 rounded-xl">
+          <Pressable 
+            onPress={() => router.push({ pathname: '/order-details' as any, params: { orderData: JSON.stringify(order) } })} 
+            className="flex-row items-center bg-accentLight px-4 py-2 rounded-xl"
+          >
             <Text className="text-accent text-xs font-bold mr-1">View Details</Text>
             <Feather name="chevron-right" size={14} color="#1a87e1" />
-          </View>
+          </Pressable>
         )}
       </View>
     </View>
@@ -205,7 +208,9 @@ export default function OrdersScreen() {
 
     const totalSpending = allOrders.reduce((sum, order) => {
       if (order.totalPrice) return sum + order.totalPrice;
-      if (order.types) return sum + (order.types.reduce((s: number, t: any) => s + (t.price * t.quantity), 0));
+      if (order.totalAmount) return sum + order.totalAmount;
+      if (order.items) return sum + (order.items.reduce((s: number, t: any) => s + (t.price * (t.qty || t.quantity || 1)), 0));
+      if (order.types) return sum + (order.types.reduce((s: number, t: any) => s + (t.price * (t.qty || t.quantity || 1)), 0));
       return sum;
     }, 0);
 

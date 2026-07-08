@@ -8,13 +8,13 @@ import { Platform } from 'react-native';
 
 // Your Firebase config from mediFront
 const firebaseConfig = {
-  apiKey: "AIzaSyC64IrEovMCJi6mNKMAb4WPNDKGeubsuVM",
-  authDomain: "supplier-management-70b81.firebaseapp.com",
-  projectId: "supplier-management-70b81",
-  storageBucket: "supplier-management-70b81.firebasestorage.app",
-  messagingSenderId: "109245280482",
-  appId: "1:109245280482:web:d0c1df43c6628fd5f36ebb",
-  measurementId: "G-NLMV8D63XD"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

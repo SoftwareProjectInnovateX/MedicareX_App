@@ -154,7 +154,7 @@ export default function ProfileScreen() {
             </View>
             <View className="ml-4 flex-1">
               <Text className="text-2xl font-bold text-white mb-1" numberOfLines={1}>{displayName}</Text>
-              <Text className="text-accentLight font-medium">{user.email}</Text>
+              <Text className="text-white/80 font-medium">{user.email}</Text>
               <TouchableOpacity 
                 className="mt-2 bg-white/20 self-start px-4 py-1.5 rounded-full flex-row items-center border border-white/30"
                 onPress={() => setShowEditModal(true)}

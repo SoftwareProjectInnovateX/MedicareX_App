@@ -1,13 +1,62 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, ActivityIndicator, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ImageBackground, ActivityIndicator, Image, Animated, Easing } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Index() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [showSplash, setShowSplash] = useState(true);
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    // Animate splash
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 4,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Hide splash after 2.5 seconds
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <Animated.View 
+          style={{ 
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+            alignItems: 'center'
+          }}
+        >
+          <Image 
+            source={require('../../assets/images/logo.png')} 
+            style={{ width: 120, height: 120, marginBottom: 20 }}
+            resizeMode="contain"
+          />
+          <Text className="text-4xl font-extrabold text-[#0f2a5e] tracking-tight">MediCareX</Text>
+          <Text className="text-[#1a87e1] font-semibold mt-2 tracking-widest uppercase text-xs">Your Health Partner</Text>
+        </Animated.View>
+      </View>
+    );
+  }
 
   if (loading) {
     return (

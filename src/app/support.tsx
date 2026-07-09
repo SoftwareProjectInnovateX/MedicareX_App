@@ -7,6 +7,9 @@ import { useColorScheme } from 'nativewind';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as ImagePicker from 'expo-image-picker';
+import { Image as RNImage } from 'react-native';
 
 export default function SupportChatScreen() {
   const router = useRouter();
@@ -34,11 +37,12 @@ export default function SupportChatScreen() {
         const createdAt = data.createdAt ? data.createdAt.toMillis() : Date.now();
         
         // The user's original message
-        if (data.message) {
+        if (data.message || data.imageUrl) {
           fetchedMessages.push({
             id: doc.id + '_user',
             role: 'user',
-            text: data.message,
+            text: data.message || '',
+            imageUrl: data.imageUrl,
             createdAt: createdAt,
             status: data.status
           });
@@ -69,6 +73,42 @@ export default function SupportChatScreen() {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages]);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.3, // Lower quality to keep base64 size small for Firestore
+      base64: true, // Request base64 string
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      if (asset.base64) {
+        const base64Url = `data:image/jpeg;base64,${asset.base64}`;
+        await sendImage(base64Url);
+      }
+    }
+  };
+
+  const sendImage = async (base64Url: string) => {
+    if (!user?.email) return;
+    setIsLoading(true);
+    try {
+      await addDoc(collection(db, 'contactMessages'), {
+        name: (user as any)?.fullName || user?.displayName || 'Customer',
+        email: user.email,
+        message: '',
+        imageUrl: base64Url,
+        status: 'unread',
+        createdAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Failed to upload image:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const sendMessage = async () => {
     if (!input.trim() || !user?.email || isLoading) return;
@@ -158,11 +198,20 @@ export default function SupportChatScreen() {
                     : 'bg-white dark:bg-gray-800 border border-[#e5e7eb] dark:border-gray-700 rounded-bl-sm'
                 }`}
               >
-                <Text 
-                  className={`${msg.role === 'user' ? 'text-white' : 'text-textPrimary dark:text-white'} text-sm leading-5`}
-                >
-                  {msg.text}
-                </Text>
+                {msg.imageUrl && (
+                  <RNImage 
+                    source={{ uri: msg.imageUrl }} 
+                    style={{ width: 200, height: 200, borderRadius: 8, marginBottom: msg.text ? 8 : 0 }} 
+                    resizeMode="cover"
+                  />
+                )}
+                {!!msg.text && (
+                  <Text 
+                    className={`${msg.role === 'user' ? 'text-white' : 'text-textPrimary dark:text-white'} text-sm leading-5`}
+                  >
+                    {msg.text}
+                  </Text>
+                )}
               </View>
             </View>
           ))}
@@ -175,6 +224,13 @@ export default function SupportChatScreen() {
         </ScrollView>
 
         <View className="p-3 bg-white dark:bg-gray-900 border-t border-[#e5e7eb] dark:border-gray-800 flex-row items-center">
+          <TouchableOpacity 
+            onPress={pickImage}
+            disabled={isLoading}
+            className="p-2 mr-1 rounded-full items-center justify-center bg-gray-100 dark:bg-gray-800"
+          >
+            <Feather name="image" color={colorScheme === 'dark' ? '#9ca3af' : '#64748b'} size={22} />
+          </TouchableOpacity>
           <TextInput 
             value={input}
             onChangeText={setInput}

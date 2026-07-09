@@ -62,7 +62,7 @@ export default function RegisterScreen() {
   return (
     <View className="flex-1 bg-blue-600">
       <ScrollView contentContainerStyle={{ padding: 16, justifyContent: 'center', minHeight: '100%' }}>
-        <View className="bg-white dark:bg-gray-800 rounded-3xl p-6 py-10 shadow-lg">
+        <View className="bg-white rounded-3xl p-6 py-10 shadow-lg">
           <View className="items-center mb-6">
             <Text className="text-4xl font-black mb-1">
               <Text className="text-blue-900">Medi</Text>
@@ -74,7 +74,7 @@ export default function RegisterScreen() {
           </View>
 
           {/* Toggle Login/Register */}
-          <View className="flex-row bg-white dark:bg-gray-800 border border-gray-200 rounded-xl mb-6 p-1">
+          <View className="flex-row bg-white border border-gray-200 rounded-xl mb-6 p-1">
             <TouchableOpacity 
               className="flex-1 py-3 rounded-lg items-center"
               onPress={() => router.push('/(auth)/login')}
@@ -89,7 +89,7 @@ export default function RegisterScreen() {
           <View className="space-y-4">
             <View>
               <Text className="text-sm font-bold text-gray-800 mb-2">Full Name *</Text>
-              <View className="border border-gray-300 rounded-xl px-4 py-3 bg-white dark:bg-gray-800">
+              <View className="border border-gray-300 rounded-xl px-4 py-3 bg-white">
                 <TextInput
                   className="text-base text-gray-800"
                   placeholder="John Doe"
@@ -101,7 +101,7 @@ export default function RegisterScreen() {
 
             <View className="mt-4">
               <Text className="text-sm font-bold text-gray-800 mb-2">Email Address *</Text>
-              <View className="border border-gray-300 rounded-xl px-4 py-3 bg-white dark:bg-gray-800">
+              <View className="border border-gray-300 rounded-xl px-4 py-3 bg-white">
                 <TextInput
                   className="text-base text-gray-800"
                   placeholder="your.email@example.com"
@@ -115,7 +115,7 @@ export default function RegisterScreen() {
 
             <View className="mt-4">
               <Text className="text-sm font-bold text-gray-800 mb-2">Phone Number</Text>
-              <View className="border border-gray-300 rounded-xl px-4 py-3 bg-white dark:bg-gray-800">
+              <View className="border border-gray-300 rounded-xl px-4 py-3 bg-white">
                 <TextInput
                   className="text-base text-gray-800"
                   placeholder="+94712345678"
@@ -128,7 +128,7 @@ export default function RegisterScreen() {
 
             <View className="mt-4">
               <Text className="text-sm font-bold text-gray-800 mb-2">Password *</Text>
-              <View className="flex-row items-center border border-gray-300 rounded-xl px-4 py-3 bg-white dark:bg-gray-800">
+              <View className="flex-row items-center border border-gray-300 rounded-xl px-4 py-3 bg-white">
                 <TextInput
                   className="flex-1 text-base text-gray-800"
                   placeholder="........"
@@ -144,7 +144,7 @@ export default function RegisterScreen() {
 
             <View className="mt-4">
               <Text className="text-sm font-bold text-gray-800 mb-2">Confirm Password *</Text>
-              <View className="flex-row items-center border border-gray-300 rounded-xl px-4 py-3 bg-white dark:bg-gray-800">
+              <View className="flex-row items-center border border-gray-300 rounded-xl px-4 py-3 bg-white">
                 <TextInput
                   className="flex-1 text-base text-gray-800"
                   placeholder="........"
@@ -176,7 +176,7 @@ export default function RegisterScreen() {
               <View className="flex-1 h-px bg-gray-200" />
             </View>
 
-            <TouchableOpacity className="flex-row items-center justify-center border border-gray-300 rounded-xl py-4 mb-4 bg-white dark:bg-gray-800 shadow-sm">
+            <TouchableOpacity className="flex-row items-center justify-center border border-gray-300 rounded-xl py-4 mb-4 bg-white shadow-sm">
               <AntDesign name="google" size={20} color="#DB4437" />
               <Text className="text-gray-800 font-bold ml-2">Sign in with Google</Text>
             </TouchableOpacity>

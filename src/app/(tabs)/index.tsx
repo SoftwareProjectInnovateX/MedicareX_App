@@ -65,6 +65,23 @@ export default function HomeScreen() {
   const { colorScheme, toggleColorScheme } = useColorScheme();
   
   const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      let nextIndex = activeCarouselIndex + 1;
+      if (nextIndex >= CAROUSEL_DATA.length) {
+        nextIndex = 0;
+      }
+      flatListRef.current?.scrollToIndex({
+        index: nextIndex,
+        animated: true,
+      });
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [activeCarouselIndex]);
+
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0 && viewableItems[0].index !== null) {
@@ -101,17 +118,23 @@ export default function HomeScreen() {
       const snapshot = await getDocs(q);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      // Fetch stock from 'products' collection
       const stockSnap = await getDocs(collection(db, 'products'));
       const stockMap: Record<string, number> = {};
       stockSnap.forEach(doc => {
         const d = doc.data();
-        stockMap[d.productCode || doc.id] = d.stock ?? 0;
+        const s = typeof d.stock === 'number' && !isNaN(d.stock) ? d.stock : 0;
+        
+        if (stockMap[doc.id] === undefined) {
+          stockMap[doc.id] = s;
+        }
+        if (d.productCode) {
+          stockMap[d.productCode] = s;
+        }
       });
 
       const finalItems = items.map(p => ({
         ...p,
-        stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? 0
+        stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? (p as any).stock ?? 0
       }));
       
       setProducts(finalItems);
@@ -200,6 +223,7 @@ export default function HomeScreen() {
           {/* Promotional Banner Carousel */}
           <View className="mb-8">
             <FlatList
+              ref={flatListRef}
               data={CAROUSEL_DATA}
               keyExtractor={item => item.id}
               horizontal
@@ -241,7 +265,7 @@ export default function HomeScreen() {
                         onPress={() => item.buttonAction(router)}
                       >
                         {item.icon === 'whatsapp' && <MaterialCommunityIcons name="whatsapp" size={16} color="#22c55e" className="mr-1.5" />}
-                        <Text style={{ color: item.bgColor }} className="font-bold text-xs">{item.buttonText}</Text>
+                        <Text style={{ color: colorScheme === 'dark' ? '#60a5fa' : item.bgColor }} className="font-bold text-xs">{item.buttonText}</Text>
                       </TouchableOpacity>
                     </View>
                     

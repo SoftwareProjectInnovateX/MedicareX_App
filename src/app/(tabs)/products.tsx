@@ -67,7 +67,14 @@ export default function ProductsScreen() {
         const stockMap: Record<string, number> = {};
         stockSnap.forEach(doc => {
           const d = doc.data();
-          stockMap[d.productCode || doc.id] = d.stock ?? 0;
+          const s = typeof d.stock === 'number' && !isNaN(d.stock) ? d.stock : 0;
+          
+          if (stockMap[doc.id] === undefined) {
+            stockMap[doc.id] = s;
+          }
+          if (d.productCode) {
+            stockMap[d.productCode] = s;
+          }
         });
 
         setProducts(prev => {
@@ -75,7 +82,7 @@ export default function ProductsScreen() {
           const source = prev.length > 0 ? prev : items;
           return source.map(p => ({
             ...p,
-            stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? 0
+            stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? (p as any).stock ?? 0
           }));
         });
       });

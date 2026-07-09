@@ -22,23 +22,23 @@ export default function CartScreen() {
   const totalAmount = subtotal + courierCharge + tax;
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
+    <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
       {/* Header */}
-      <View className="px-6 py-4 flex-row items-center border-b border-[#e5e7eb] bg-white">
+      <View className="px-6 py-4 flex-row items-center border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
           <Feather name="arrow-left" size={24} color="#1e293b" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-textPrimary">Shopping Cart</Text>
+        <Text className="text-xl font-bold text-textPrimary dark:text-white">Shopping Cart</Text>
       </View>
 
       <ScrollView className="flex-1 px-4 pt-6" showsVerticalScrollIndicator={false}>
         {items.length === 0 ? (
           <View className="items-center justify-center py-20">
-            <View className="w-24 h-24 bg-slate-100 rounded-full items-center justify-center mb-6">
+            <View className="w-24 h-24 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center mb-6">
               <Feather name="shopping-cart" size={40} color="#64748b" />
             </View>
-            <Text className="text-xl font-bold text-textPrimary mb-2">Your cart is empty</Text>
-            <Text className="text-textSecondary text-center mb-8">Looks like you haven't added any items to your cart yet.</Text>
+            <Text className="text-xl font-bold text-textPrimary dark:text-white mb-2">Your cart is empty</Text>
+            <Text className="text-textSecondary dark:text-gray-300 text-center mb-8">Looks like you haven't added any items to your cart yet.</Text>
             <TouchableOpacity 
               className="bg-accent px-8 py-4 rounded-xl"
               onPress={() => router.push('/products')}
@@ -50,9 +50,9 @@ export default function CartScreen() {
           <View className="pb-8">
             {/* Cart Items */}
             {items.map((item) => (
-              <View key={item.id} className="bg-white rounded-xl p-4 mb-4 border border-[#e5e7eb] flex-row items-center justify-between shadow-sm">
+              <View key={item.id} className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4 border border-[#e5e7eb] dark:border-gray-700 flex-row items-center justify-between shadow-sm">
                 <View className="flex-row items-center flex-1">
-                  <View className="w-12 h-12 bg-slate-50 rounded-lg items-center justify-center mr-4 overflow-hidden border border-[#e5e7eb]">
+                  <View className="w-12 h-12 bg-slate-50 dark:bg-gray-800 rounded-lg items-center justify-center mr-4 overflow-hidden border border-[#e5e7eb] dark:border-gray-700">
                     {item.imageUrl ? (
                       <Image source={{ uri: formatImageUrl(item.imageUrl) }} className="w-full h-full" resizeMode="contain" />
                     ) : (
@@ -61,8 +61,8 @@ export default function CartScreen() {
                   </View>
                   
                   <View className="flex-1">
-                    <Text className="font-bold text-textPrimary mb-1" numberOfLines={1}>{item.name}</Text>
-                    <Text className="text-textSecondary text-xs">Rs. {item.price.toFixed(2)} each</Text>
+                    <Text className="font-bold text-textPrimary dark:text-white mb-1" numberOfLines={1}>{item.name}</Text>
+                    <Text className="text-textSecondary dark:text-gray-300 text-xs">Rs. {item.price.toFixed(2)} each</Text>
                   </View>
                 </View>
 
@@ -78,7 +78,7 @@ export default function CartScreen() {
                       <Feather name={item.qty === 1 ? "trash-2" : "minus"} color="#ef4444" size={14} />
                     </TouchableOpacity>
                     
-                    <Text className="font-bold text-textPrimary px-3">{item.qty}</Text>
+                    <Text className="font-bold text-textPrimary dark:text-white px-3">{item.qty}</Text>
                     
                     <TouchableOpacity 
                       className="w-8 h-8 bg-blue-50 rounded items-center justify-center border border-blue-100"
@@ -88,7 +88,7 @@ export default function CartScreen() {
                     </TouchableOpacity>
                   </View>
 
-                  <Text className="font-bold text-textPrimary mr-3 min-w-[80px] text-right">
+                  <Text className="font-bold text-textPrimary dark:text-white mr-3 min-w-[80px] text-right">
                     Rs. {(item.price * item.qty).toFixed(2)}
                   </Text>
                 </View>
@@ -96,23 +96,23 @@ export default function CartScreen() {
             ))}
 
             {/* Order Summary */}
-            <View className="bg-white rounded-xl p-5 border border-[#e5e7eb] shadow-sm mt-2 mb-6">
+            <View className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-[#e5e7eb] dark:border-gray-700 shadow-sm mt-2 mb-6">
               <View className="flex-row justify-between mb-3">
-                <Text className="text-textSecondary">Subtotal</Text>
-                <Text className="font-bold text-textPrimary">Rs. {subtotal.toFixed(2)}</Text>
+                <Text className="text-textSecondary dark:text-gray-300">Subtotal</Text>
+                <Text className="font-bold text-textPrimary dark:text-white">Rs. {subtotal.toFixed(2)}</Text>
               </View>
               <View className="flex-row justify-between mb-3">
-                <Text className="text-textSecondary">Courier Charge</Text>
-                <Text className="font-bold text-textPrimary">Rs. {courierCharge.toFixed(2)}</Text>
+                <Text className="text-textSecondary dark:text-gray-300">Courier Charge</Text>
+                <Text className="font-bold text-textPrimary dark:text-white">Rs. {courierCharge.toFixed(2)}</Text>
               </View>
               <View className="flex-row justify-between mb-4">
-                <Text className="text-textSecondary">Tax (0%)</Text>
-                <Text className="font-bold text-textPrimary">Rs. {tax.toFixed(2)}</Text>
+                <Text className="text-textSecondary dark:text-gray-300">Tax (0%)</Text>
+                <Text className="font-bold text-textPrimary dark:text-white">Rs. {tax.toFixed(2)}</Text>
               </View>
               
-              <View className="border-t border-[#e5e7eb] pt-4 flex-row justify-between items-center">
-                <Text className="font-bold text-lg text-textPrimary">Total</Text>
-                <Text className="font-bold text-lg text-textPrimary">Rs. {totalAmount.toFixed(2)}</Text>
+              <View className="border-t border-[#e5e7eb] dark:border-gray-700 pt-4 flex-row justify-between items-center">
+                <Text className="font-bold text-lg text-textPrimary dark:text-white">Total</Text>
+                <Text className="font-bold text-lg text-textPrimary dark:text-white">Rs. {totalAmount.toFixed(2)}</Text>
               </View>
             </View>
 
@@ -139,7 +139,7 @@ export default function CartScreen() {
                   onPress={() => router.push('/products')}
                 >
                   <Feather name="arrow-left" size={16} color="#64748b" />
-                  <Text className="text-textSecondary ml-2">Continue Shopping</Text>
+                  <Text className="text-textSecondary dark:text-gray-300 ml-2">Continue Shopping</Text>
                 </TouchableOpacity>
               </View>
             </View>

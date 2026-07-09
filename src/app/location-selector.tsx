@@ -59,13 +59,13 @@ export default function LocationSelectorScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
-      <View className="flex-row items-center justify-between p-4 border-b border-[#e5e7eb] bg-white shadow-sm z-20">
+    <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
+      <View className="flex-row items-center justify-between p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm z-20">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
             <Feather name="arrow-left" size={24} color="#0f2a5e" />
           </TouchableOpacity>
-          <Text className="text-xl font-bold text-textPrimary">Select Location</Text>
+          <Text className="text-xl font-bold text-textPrimary dark:text-white">Select Location</Text>
         </View>
       </View>
 
@@ -74,8 +74,8 @@ export default function LocationSelectorScreen() {
         className="flex-1 flex-col"
       >
         {/* Search Bar / Address Bar */}
-        <View className="bg-white z-20 shadow-sm rounded-b-3xl px-6 py-4" style={{ height: 160 }}>
-          <Text className="text-sm font-bold text-textPrimary mb-2">Delivery Address</Text>
+        <View className="bg-white dark:bg-gray-800 z-20 shadow-sm rounded-b-3xl px-6 py-4" style={{ height: 160 }}>
+          <Text className="text-sm font-bold text-textPrimary dark:text-white mb-2">Delivery Address</Text>
           
           <GooglePlacesAutocomplete
             placeholder={loadingAddress ? 'Fetching address...' : 'Search for a place...'}
@@ -175,7 +175,7 @@ export default function LocationSelectorScreen() {
         </View>
 
         {/* Bottom Button */}
-        <View className="p-6 bg-white border-t border-[#e5e7eb] z-10">
+        <View className="p-6 bg-white dark:bg-gray-800 border-t border-[#e5e7eb] dark:border-gray-700 z-10">
           <TouchableOpacity 
             className="w-full bg-accent py-4 rounded-xl items-center shadow-sm"
             onPress={handleSave}

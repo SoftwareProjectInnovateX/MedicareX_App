@@ -131,7 +131,7 @@ export default function OrderDetailsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#f1f5f9]">
-      <View className="flex-row items-center justify-between p-4 bg-white border-b border-[#e5e7eb]">
+      <View className="flex-row items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-2">
             <Feather name="arrow-left" size={24} color="#0f2a5e" />
@@ -142,7 +142,7 @@ export default function OrderDetailsScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Header Card */}
-        <View className="bg-white rounded-2xl p-5 mb-4 border border-slate-200 shadow-sm">
+        <View className="bg-white dark:bg-gray-800 rounded-2xl p-5 mb-4 border border-slate-200 shadow-sm">
           <View className="flex-row justify-between items-start mb-4">
             <View>
               <Text className="text-xs uppercase font-bold text-slate-400 tracking-wider mb-1">Order Number</Text>
@@ -174,7 +174,7 @@ export default function OrderDetailsScreen() {
         </View>
 
         {/* Customer Info Card */}
-        <View className="bg-white rounded-2xl p-5 mb-4 border border-slate-200 shadow-sm">
+        <View className="bg-white dark:bg-gray-800 rounded-2xl p-5 mb-4 border border-slate-200 shadow-sm">
           <View className="flex-row items-center mb-4 border-b border-slate-100 pb-3">
             <Feather name="map-pin" size={18} color="#1a87e1" className="mr-2" />
             <Text className="text-base font-bold text-slate-800">Delivery Details</Text>
@@ -197,7 +197,7 @@ export default function OrderDetailsScreen() {
         </View>
 
         {/* Items List */}
-        <View className="bg-white rounded-2xl p-5 mb-6 border border-slate-200 shadow-sm">
+        <View className="bg-white dark:bg-gray-800 rounded-2xl p-5 mb-6 border border-slate-200 shadow-sm">
           <View className="flex-row items-center mb-4 border-b border-slate-100 pb-3">
             <Feather name="package" size={18} color="#1a87e1" className="mr-2" />
             <Text className="text-base font-bold text-slate-800">Order Summary</Text>

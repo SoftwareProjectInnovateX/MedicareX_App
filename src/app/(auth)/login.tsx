@@ -38,7 +38,7 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       await login(email, password);
-      router.replace('/(tabs)/');
+      router.replace('/(tabs)');
     } catch (error: any) {
       Alert.alert("Login Failed", error.message);
     } finally {
@@ -50,7 +50,7 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       await loginWithGoogleCredential(idToken);
-      router.replace('/(tabs)/');
+      router.replace('/(tabs)');
     } catch (error: any) {
       Alert.alert("Google Login Failed", error.message);
     } finally {
@@ -81,7 +81,7 @@ export default function LoginScreen() {
 
   return (
     <View className="flex-1 bg-blue-600 justify-center px-4">
-      <View className="bg-white rounded-3xl p-6 py-10 shadow-lg">
+      <View className="bg-white dark:bg-gray-800 rounded-3xl p-6 py-10 shadow-lg">
         <View className="items-center mb-6">
           <Text className="text-4xl font-black mb-1">
             <Text className="text-blue-900">Medi</Text>
@@ -93,7 +93,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Toggle Login/Register */}
-        <View className="flex-row bg-white border border-gray-200 rounded-xl mb-6 p-1">
+        <View className="flex-row bg-white dark:bg-gray-800 border border-gray-200 rounded-xl mb-6 p-1">
           <TouchableOpacity className="flex-1 bg-blue-500 py-3 rounded-lg items-center">
             <Text className="text-white font-bold">Login</Text>
           </TouchableOpacity>
@@ -108,7 +108,7 @@ export default function LoginScreen() {
         <View className="space-y-4">
           <View>
             <Text className="text-sm font-bold text-gray-800 mb-2">Email Address</Text>
-            <View className="border border-gray-300 rounded-xl px-4 py-3 bg-white">
+            <View className="border border-gray-300 rounded-xl px-4 py-3 bg-white dark:bg-gray-800">
               <TextInput
                 className="text-base text-gray-800"
                 placeholder="your.email@example.com"
@@ -122,7 +122,7 @@ export default function LoginScreen() {
 
           <View className="mt-4">
             <Text className="text-sm font-bold text-gray-800 mb-2">Password</Text>
-            <View className="flex-row items-center border border-gray-300 rounded-xl px-4 py-3 bg-white">
+            <View className="flex-row items-center border border-gray-300 rounded-xl px-4 py-3 bg-white dark:bg-gray-800">
               <TextInput
                 className="flex-1 text-base text-gray-800"
                 placeholder="........"
@@ -155,7 +155,7 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity 
-            className="flex-row items-center justify-center border border-gray-300 rounded-xl py-4 mb-4 bg-white shadow-sm"
+            className="flex-row items-center justify-center border border-gray-300 rounded-xl py-4 mb-4 bg-white dark:bg-gray-800 shadow-sm"
             onPress={handleGoogleLogin}
             disabled={isLoading}
           >

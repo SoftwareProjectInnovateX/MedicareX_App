@@ -141,12 +141,12 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
-      <View className="flex-row items-center p-4 border-b border-[#e5e7eb] bg-white">
+    <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
+      <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
           <Feather name="arrow-left" size={24} color="#0f2a5e" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-textPrimary">Notifications</Text>
+        <Text className="text-xl font-bold text-textPrimary dark:text-white">Notifications</Text>
       </View>
 
       {loading ? (
@@ -160,20 +160,20 @@ export default function NotificationsScreen() {
               <TouchableOpacity 
                 key={notif.id} 
                 onPress={handlePress}
-                className="bg-white rounded-2xl p-4 mb-3 border border-[#e5e7eb] shadow-sm flex-row items-center"
+                className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-3 border border-[#e5e7eb] dark:border-gray-700 shadow-sm flex-row items-center"
               >
                 <View className={`w-12 h-12 rounded-xl ${notif.color} items-center justify-center mr-4`}>
                   <Feather name={notif.icon as any} size={20} color={notif.iconColor} />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-bold text-textPrimary text-base mb-1">{notif.title}</Text>
-                  <Text className="text-textSecondary text-sm">{notif.message}</Text>
+                  <Text className="font-bold text-textPrimary dark:text-white text-base mb-1">{notif.title}</Text>
+                  <Text className="text-textSecondary dark:text-gray-300 text-sm">{notif.message}</Text>
                 </View>
                 <Feather name="chevron-right" size={16} color="#94a3b8" />
               </TouchableOpacity>
             ))
           ) : (
-            <View className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 items-center mt-10">
+            <View className="bg-slate-50 dark:bg-gray-800 border border-dashed border-slate-200 rounded-2xl p-8 items-center mt-10">
               <Feather name="bell-off" size={40} color="#cbd5e1" className="mb-4" />
               <Text className="font-bold text-slate-600 text-lg">No Notifications</Text>
               <Text className="text-sm text-slate-400 mt-2 text-center">

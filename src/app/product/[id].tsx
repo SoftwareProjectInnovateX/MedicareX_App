@@ -42,7 +42,7 @@ export default function ProductDetailScreen() {
     try {
       const q = query(collection(db, 'productRatings'), where('productId', '==', String(id)));
       const snap = await getDocs(q);
-      const fetchedReviews = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const fetchedReviews: any[] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
       let sum = 0;
       let count = 0;
@@ -148,7 +148,7 @@ export default function ProductDetailScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-primary items-center justify-center">
+      <View className="flex-1 bg-primary dark:bg-gray-900 items-center justify-center">
         <ActivityIndicator size="large" color="#1a87e1" />
       </View>
     );
@@ -156,10 +156,10 @@ export default function ProductDetailScreen() {
 
   if (!product) {
     return (
-      <View className="flex-1 bg-primary items-center justify-center px-6">
+      <View className="flex-1 bg-primary dark:bg-gray-900 items-center justify-center px-6">
         <Feather name="alert-circle" size={48} color="#94A3B8" />
-        <Text className="text-xl font-bold text-textPrimary mt-4 text-center">Product Not Found</Text>
-        <Text className="text-textSecondary text-center mt-2">The product you are looking for does not exist.</Text>
+        <Text className="text-xl font-bold text-textPrimary dark:text-white mt-4 text-center">Product Not Found</Text>
+        <Text className="text-textSecondary dark:text-gray-300 text-center mt-2">The product you are looking for does not exist.</Text>
         <TouchableOpacity 
           className="mt-8 bg-accent px-6 py-3 rounded-full"
           onPress={() => router.back()}
@@ -173,17 +173,17 @@ export default function ProductDetailScreen() {
   const price = product.retailPrice || product.price;
 
   return (
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-primary dark:bg-gray-900">
       {/* Header */}
       <View className="absolute top-0 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
         <TouchableOpacity 
-          className="w-10 h-10 bg-white/80 rounded-full items-center justify-center backdrop-blur-md shadow-sm"
+          className="w-10 h-10 bg-white dark:bg-gray-800/80 rounded-full items-center justify-center backdrop-blur-md shadow-sm"
           onPress={() => router.back()}
         >
           <Feather name="arrow-left" color="#1E293B" size={20} />
         </TouchableOpacity>
         <TouchableOpacity 
-          className="w-10 h-10 bg-white/80 rounded-full items-center justify-center backdrop-blur-md shadow-sm relative"
+          className="w-10 h-10 bg-white dark:bg-gray-800/80 rounded-full items-center justify-center backdrop-blur-md shadow-sm relative"
           onPress={() => router.push('/cart')}
         >
           <Feather name="shopping-cart" color="#1E293B" size={20} />
@@ -197,7 +197,7 @@ export default function ProductDetailScreen() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Product Image Area */}
-        <View className="h-96 bg-white w-full items-center justify-center rounded-b-[40px] shadow-sm pt-20 overflow-hidden">
+        <View className="h-96 bg-white dark:bg-gray-800 w-full items-center justify-center rounded-b-[40px] shadow-sm pt-20 overflow-hidden">
           {product.imageUrl ? (
             <Image 
               source={{ uri: formatImageUrl(product.imageUrl) }} 
@@ -212,8 +212,8 @@ export default function ProductDetailScreen() {
         {/* Product Info */}
         <View className="px-6 py-8">
           <View className="flex-row items-center mb-3">
-            <View className="bg-accentLight px-3 py-1 rounded-full">
-              <Text className="text-textPrimary text-xs font-bold">
+            <View className="bg-accentLight dark:bg-gray-800 px-3 py-1 rounded-full">
+              <Text className="text-textPrimary dark:text-white text-xs font-bold">
                 {CATEGORIES.find(c => c.id === product.category)?.name || product.category || 'Medicine'}
               </Text>
             </View>
@@ -225,7 +225,7 @@ export default function ProductDetailScreen() {
             )}
           </View>
 
-          <Text className="text-3xl font-extrabold text-textPrimary mb-2 leading-tight">{product.name || product.productName}</Text>
+          <Text className="text-3xl font-extrabold text-textPrimary dark:text-white mb-2 leading-tight">{product.name || product.productName}</Text>
           
           {/* Rating Summary Display */}
           <View className="flex-row items-center mb-4">
@@ -233,7 +233,7 @@ export default function ProductDetailScreen() {
               <Text className="font-bold text-orange-600 mr-1">{ratingSummary.avg.toFixed(1)}</Text>
               <Ionicons name="star" size={14} color="#ea580c" />
             </View>
-            <Text className="text-textSecondary text-sm">{ratingSummary.count} {ratingSummary.count === 1 ? 'Review' : 'Reviews'}</Text>
+            <Text className="text-textSecondary dark:text-gray-300 text-sm">{ratingSummary.count} {ratingSummary.count === 1 ? 'Review' : 'Reviews'}</Text>
           </View>
 
           <Text className="text-2xl font-bold text-accent mb-2">Rs. {price}</Text>
@@ -247,31 +247,31 @@ export default function ProductDetailScreen() {
           </View>
 
           <View className="mb-6">
-            <Text className="text-lg font-bold text-textPrimary mb-2">Description</Text>
-            <Text className="text-textSecondary leading-relaxed text-base">
+            <Text className="text-lg font-bold text-textPrimary dark:text-white mb-2">Description</Text>
+            <Text className="text-textSecondary dark:text-gray-300 leading-relaxed text-base">
               {product.description || 'No description available for this product.'}
             </Text>
           </View>
 
           {/* Supplier Info if available */}
           {product.supplierId && (
-            <View className="flex-row items-center bg-white p-4 rounded-2xl shadow-sm border border-[#e5e7eb] mb-6">
-              <View className="w-12 h-12 bg-primary rounded-full items-center justify-center mr-4">
+            <View className="flex-row items-center bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-[#e5e7eb] dark:border-gray-700 mb-6">
+              <View className="w-12 h-12 bg-primary dark:bg-gray-900 rounded-full items-center justify-center mr-4">
                 <Feather name="truck" color="#1a87e1" size={20} />
               </View>
               <View>
-                <Text className="text-sm text-textSecondary font-medium">Supplier Code</Text>
-                <Text className="text-base font-bold text-textPrimary">{product.supplierId}</Text>
+                <Text className="text-sm text-textSecondary dark:text-gray-300 font-medium">Supplier Code</Text>
+                <Text className="text-base font-bold text-textPrimary dark:text-white">{product.supplierId}</Text>
               </View>
             </View>
           )}
 
           {/* Ratings & Reviews Section */}
           <View className="mt-4 mb-8">
-            <Text className="text-lg font-bold text-textPrimary mb-4">Ratings & Reviews</Text>
+            <Text className="text-lg font-bold text-textPrimary dark:text-white mb-4">Ratings & Reviews</Text>
             
             {/* Review Form */}
-            <View className="bg-white p-4 rounded-2xl border border-slate-200 mb-6 shadow-sm">
+            <View className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 mb-6 shadow-sm">
               <Text className="text-base font-bold text-slate-800 mb-2">Write a Review</Text>
               <View className="flex-row mb-3">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -292,7 +292,7 @@ export default function ProductDetailScreen() {
                 placeholderTextColor="#94a3b8"
                 multiline
                 numberOfLines={3}
-                className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 mb-3"
+                className="bg-slate-50 dark:bg-gray-800 border border-slate-200 rounded-xl p-3 text-slate-700 mb-3"
                 style={{ minHeight: 80, textAlignVertical: 'top' }}
               />
               <TouchableOpacity 
@@ -309,7 +309,7 @@ export default function ProductDetailScreen() {
               <Text className="text-slate-500 italic text-center py-4">No text reviews yet. Be the first to leave a feedback!</Text>
             ) : (
               reviews.filter(r => r.comment && r.comment.trim() !== '').map((review, idx) => (
-                <View key={review.id || idx} className="bg-white p-4 rounded-2xl border border-slate-100 mb-3">
+                <View key={review.id || idx} className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-100 mb-3">
                   <View className="flex-row justify-between items-center mb-2">
                     <Text className="font-bold text-slate-800">{review.customerName}</Text>
                     <View className="flex-row">
@@ -335,17 +335,17 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View className="bg-white px-6 py-6 border-t border-[#e5e7eb] flex-row items-center justify-between">
-        <View className="flex-row items-center bg-slate-100 rounded-full p-1">
+      <View className="bg-white dark:bg-gray-800 px-6 py-6 border-t border-[#e5e7eb] dark:border-gray-700 flex-row items-center justify-between">
+        <View className="flex-row items-center bg-slate-100 dark:bg-gray-800 rounded-full p-1">
           <TouchableOpacity 
-            className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm"
+            className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full items-center justify-center shadow-sm"
             onPress={() => setQty(prev => prev > 1 ? prev - 1 : 1)}
           >
             <Feather name="minus" color="#1E293B" size={20} />
           </TouchableOpacity>
-          <Text className="w-10 text-center font-bold text-lg text-textPrimary">{qty}</Text>
+          <Text className="w-10 text-center font-bold text-lg text-textPrimary dark:text-white">{qty}</Text>
           <TouchableOpacity 
-            className={`w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm ${qty >= (product.stock || 0) ? 'opacity-50' : ''}`}
+            className={`w-12 h-12 bg-white dark:bg-gray-800 rounded-full items-center justify-center shadow-sm ${qty >= (product.stock || 0) ? 'opacity-50' : ''}`}
             onPress={() => setQty(prev => prev < (product.stock || 0) ? prev + 1 : prev)}
             disabled={qty >= (product.stock || 0)}
           >

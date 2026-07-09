@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, ActivityIndicator, Alert, SafeAreaView, TouchableOpacity, Text } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { db } from '../services/firebase';
 import { collection, addDoc, serverTimestamp, doc, writeBatch, increment } from 'firebase/firestore';
 import { useCartStore } from '../stores/cartStore';
@@ -12,6 +13,9 @@ export default function PaymentScreen() {
   const { config, orderData } = useLocalSearchParams();
   const { clearCart } = useCartStore();
   const [loading, setLoading] = useState(true);
+  const { colorScheme } = useColorScheme();
+
+  const isProcessed = React.useRef(false);
 
   if (!config || !orderData) {
     Alert.alert('Error', 'Missing payment configuration.');
@@ -28,10 +32,10 @@ export default function PaymentScreen() {
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
-          body { display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; background-color: #f1f5f9; }
-          .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid #3498db; width: 40px; height: 40px; -webkit-animation: spin 1s linear infinite; animation: spin 1s linear infinite; }
+          body { display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; background-color: ${colorScheme === 'dark' ? '#1e293b' : '#f1f5f9'}; }
+          .loader { border: 4px solid ${colorScheme === 'dark' ? '#334155' : '#f3f3f3'}; border-radius: 50%; border-top: 4px solid #3498db; width: 40px; height: 40px; -webkit-animation: spin 1s linear infinite; animation: spin 1s linear infinite; }
           @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-          h3 { color: #0f2a5e; margin-top: 20px; }
+          h3 { color: ${colorScheme === 'dark' ? '#f1f5f9' : '#0f2a5e'}; margin-top: 20px; }
         </style>
       </head>
       <body>
@@ -63,8 +67,6 @@ export default function PaymentScreen() {
       </body>
     </html>
   `;
-
-  const isProcessed = React.useRef(false);
 
   const handleNavigationStateChange = async (navState: WebViewNavigation) => {
     const { url } = navState;
@@ -109,12 +111,12 @@ export default function PaymentScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f1f5f9' }}>
-      <View className="flex-row items-center p-4 bg-white border-b border-[#e5e7eb]">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colorScheme === 'dark' ? '#0f172a' : '#f1f5f9' }}>
+      <View className="flex-row items-center p-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700">
         <TouchableOpacity onPress={() => router.back()} className="mr-4 p-2">
-          <Feather name="x" size={24} color="#0f2a5e" />
+          <Feather name="x" size={24} color={colorScheme === 'dark' ? '#f1f5f9' : '#0f2a5e'} />
         </TouchableOpacity>
-        <Text className="text-xl font-black text-slate-900">Secure Payment</Text>
+        <Text className="text-xl font-black text-slate- dark:text-gray-300">Secure Payment</Text>
       </View>
       <View style={{ flex: 1 }}>
         <WebView
@@ -123,10 +125,18 @@ export default function PaymentScreen() {
           onLoadEnd={() => setLoading(false)}
           javaScriptEnabled={true}
           domStorageEnabled={true}
-          renderError={() => <View style={{ flex: 1, backgroundColor: '#f1f5f9' }} />}
+          injectedJavaScript={colorScheme === 'dark' ? `
+            setTimeout(function() {
+              var style = document.createElement('style');
+              style.innerHTML = 'body, html { background-color: #0f172a !important; } .container, .ph-container, .card, .main-container, .list-group-item { background-color: #0f172a !important; border-color: #1e293b !important; } input, select, textarea { background-color: #1e293b !important; color: #f8fafc !important; border: 1px solid #334155 !important; } label, p, span:not(.badge), h1, h2, h3, h4, h5, h6, div { color: #f8fafc !important; } .text-muted, .text-dark { color: #94a3b8 !important; } .bg-light { background-color: #1e293b !important; } .alert-warning { background-color: #422006 !important; color: #fde047 !important; border: none !important; }';
+              document.head.appendChild(style);
+            }, 100);
+            true;
+          ` : undefined}
+          renderError={() => <View style={{ flex: 1, backgroundColor: colorScheme === 'dark' ? '#0f172a' : '#f1f5f9' }} />}
         />
         {loading && (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f1f5f9' }}>
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: colorScheme === 'dark' ? '#0f172a' : '#f1f5f9' }}>
             <ActivityIndicator size="large" color="#1a87e1" />
           </View>
         )}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
@@ -12,6 +13,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 export default function PrescriptionScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colorScheme } = useColorScheme();
   
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -89,35 +91,35 @@ export default function PrescriptionScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
-      <View className="flex-row items-center p-4 border-b border-[#e5e7eb] bg-white">
+    <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
+      <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <Feather name="arrow-left" size={24} color="#0f2a5e" />
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#f1f5f9' : '#0f2a5e'} />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-textPrimary">Upload Prescription</Text>
+        <Text className="text-xl font-bold text-textPrimary dark:text-white">Upload Prescription</Text>
       </View>
       
       <ScrollView className="flex-1 p-6" contentContainerStyle={{ paddingBottom: 40 }}>
         
-        <View className="bg-white rounded-2xl p-6 shadow-sm border border-[#e5e7eb] mb-6">
+        <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-[#e5e7eb] dark:border-gray-700 mb-6">
           <View className="flex-row items-center mb-6">
-            <View className="w-10 h-10 bg-accentLight rounded-full items-center justify-center mr-3">
+            <View className="w-10 h-10 bg-accentLight dark:bg-gray-800 rounded-full items-center justify-center mr-3">
               <Feather name="upload" size={20} color="#1a87e1" />
             </View>
             <View>
-              <Text className="font-bold text-textPrimary text-lg">Prescription Details</Text>
-              <Text className="text-textSecondary text-xs">Fill in details and attach file</Text>
+              <Text className="font-bold text-textPrimary dark:text-white text-lg">Prescription Details</Text>
+              <Text className="text-textSecondary dark:text-gray-300 text-xs">Fill in details and attach file</Text>
             </View>
           </View>
 
           {/* Form Fields */}
           <View className="mb-4">
-            <Text className="text-textPrimary font-semibold mb-2">Name</Text>
-            <View className="flex-row items-center bg-primary px-4 py-3 rounded-xl border border-[#e5e7eb]">
+            <Text className="text-textPrimary dark:text-white font-semibold mb-2">Name</Text>
+            <View className="flex-row items-center bg-primary dark:bg-gray-900 px-4 py-3 rounded-xl border border-[#e5e7eb] dark:border-gray-700">
               <Feather name="user" color="#1a87e1" size={18} />
               <TextInput 
                 placeholder="Your full name" 
-                className="flex-1 ml-3 text-textPrimary"
+                className="flex-1 ml-3 text-textPrimary dark:text-white"
                 placeholderTextColor="#94A3B8"
                 value={name}
                 onChangeText={setName}
@@ -126,12 +128,12 @@ export default function PrescriptionScreen() {
           </View>
 
           <View className="mb-4">
-            <Text className="text-textPrimary font-semibold mb-2">Phone</Text>
-            <View className="flex-row items-center bg-primary px-4 py-3 rounded-xl border border-[#e5e7eb]">
+            <Text className="text-textPrimary dark:text-white font-semibold mb-2">Phone</Text>
+            <View className="flex-row items-center bg-primary dark:bg-gray-900 px-4 py-3 rounded-xl border border-[#e5e7eb] dark:border-gray-700">
               <Feather name="phone" color="#1a87e1" size={18} />
               <TextInput 
                 placeholder="Your phone number" 
-                className="flex-1 ml-3 text-textPrimary"
+                className="flex-1 ml-3 text-textPrimary dark:text-white"
                 placeholderTextColor="#94A3B8"
                 keyboardType="phone-pad"
                 value={phone}
@@ -141,12 +143,12 @@ export default function PrescriptionScreen() {
           </View>
 
           <View className="mb-6">
-            <Text className="text-textPrimary font-semibold mb-2">Address</Text>
-            <View className="flex-row items-start bg-primary px-4 py-3 rounded-xl border border-[#e5e7eb]">
+            <Text className="text-textPrimary dark:text-white font-semibold mb-2">Address</Text>
+            <View className="flex-row items-start bg-primary dark:bg-gray-900 px-4 py-3 rounded-xl border border-[#e5e7eb] dark:border-gray-700">
               <Feather name="map-pin" color="#1a87e1" size={18} className="mt-1" />
               <TextInput 
                 placeholder="Your delivery address" 
-                className="flex-1 ml-3 text-textPrimary"
+                className="flex-1 ml-3 text-textPrimary dark:text-white"
                 placeholderTextColor="#94A3B8"
                 multiline
                 numberOfLines={3}
@@ -159,17 +161,17 @@ export default function PrescriptionScreen() {
 
           {/* File Picker */}
           <View className="mb-6">
-            <Text className="text-textPrimary font-semibold mb-2">Prescription File</Text>
+            <Text className="text-textPrimary dark:text-white font-semibold mb-2">Prescription File</Text>
             <TouchableOpacity 
               onPress={pickDocument}
-              className={`border-2 border-dashed rounded-xl p-6 items-center justify-center ${file ? 'border-accent bg-accentLight' : 'border-[#e5e7eb] bg-primary'}`}
+              className={`border-2 border-dashed rounded-xl p-6 items-center justify-center ${file ? 'border-accent bg-accentLight dark:bg-gray-800' : 'border-[#e5e7eb] dark:border-gray-700 bg-primary dark:bg-gray-900'}`}
             >
               <Feather name={file ? "check-circle" : "file-plus"} size={32} color={file ? "#1a87e1" : "#94A3B8"} className="mb-2" />
               {file ? (
                 <Text className="text-accent font-semibold text-center">{file.name}</Text>
               ) : (
                 <>
-                  <Text className="text-textSecondary font-semibold text-center">Tap to select a file</Text>
+                  <Text className="text-textSecondary dark:text-gray-300 font-semibold text-center">Tap to select a file</Text>
                   <Text className="text-[#94A3B8] text-xs text-center mt-1">Supports JPG, PNG, PDF</Text>
                 </>
               )}

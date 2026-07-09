@@ -166,28 +166,28 @@ export default function ProductsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-primary dark:bg-gray-900">
       {/* Header */}
-      <View className="px-6 pt-14 pb-4 bg-white border-b border-[#e5e7eb] flex-row justify-between items-center">
-        <Text className="text-2xl font-bold text-textPrimary">
+      <View className="px-6 pt-14 pb-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700 flex-row justify-between items-center">
+        <Text className="text-2xl font-bold text-textPrimary dark:text-white">
           {activeCategoryName}
         </Text>
         <View className="flex-row items-center">
           {(selectedCategory || sortOrder !== 'default') && (
             <TouchableOpacity 
-              className="mr-3 px-3 py-1 bg-slate-100 rounded-full flex-row items-center"
+              className="mr-3 px-3 py-1 bg-slate-100 dark:bg-gray-800 rounded-full flex-row items-center"
               onPress={() => {
                 setSelectedCategory(undefined);
                 setSortOrder('default');
               }}
             >
-              <Text className="text-xs text-textSecondary font-bold mr-1">Clear</Text>
+              <Text className="text-xs text-textSecondary dark:text-gray-300 font-bold mr-1">Clear</Text>
               <Feather name="x" size={12} color="#64748B" />
             </TouchableOpacity>
           )}
           <TouchableOpacity 
             className={`w-10 h-10 rounded-full items-center justify-center ${
-              (selectedCategory || sortOrder !== 'default') ? 'bg-blue-100' : 'bg-primary'
+              (selectedCategory || sortOrder !== 'default') ? 'bg-blue-100' : 'bg-primary dark:bg-gray-900'
             }`}
             onPress={openFilterModal}
           >
@@ -197,12 +197,12 @@ export default function ProductsScreen() {
       </View>
 
       {/* Search */}
-      <View className="px-6 py-4 bg-white shadow-sm mb-4">
-        <View className="flex-row items-center bg-slate-100 px-4 py-3 rounded-2xl">
+      <View className="px-6 py-4 bg-white dark:bg-gray-800 shadow-sm mb-4">
+        <View className="flex-row items-center bg-slate-100 dark:bg-gray-800 px-4 py-3 rounded-2xl">
           <Feather name="search" color="#64748B" size={20} />
           <TextInput 
             placeholder="Search for medicines, vitamins..." 
-            className="flex-1 ml-3 text-base text-textPrimary"
+            className="flex-1 ml-3 text-base text-textPrimary dark:text-white"
             placeholderTextColor="#64748B"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -228,18 +228,18 @@ export default function ProductsScreen() {
                 return (
                 <TouchableOpacity 
                   key={product.id} 
-                  className="w-[48%] bg-white rounded-2xl p-4 mb-4 shadow-sm border border-[#e5e7eb]"
+                  className="w-[48%] bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 shadow-sm border border-[#e5e7eb] dark:border-gray-700"
                   onPress={() => router.push(`/product/${product.id}`)}
                 >
-                  <View className="h-32 w-full bg-primary rounded-xl mb-3 items-center justify-center overflow-hidden">
+                  <View className="h-32 w-full bg-primary dark:bg-gray-900 rounded-xl mb-3 items-center justify-center overflow-hidden">
                     {product.imageUrl ? (
                       <Image source={{ uri: formatImageUrl(product.imageUrl) }} className="w-full h-full" resizeMode="contain" />
                     ) : (
                       <MaterialCommunityIcons name={CATEGORIES.find(c => c.id === product.category)?.vectorIcon as any || "pill"} size={48} color="#1a87e1" />
                     )}
                   </View>
-                  <Text className="font-bold text-textPrimary mb-1" numberOfLines={2}>{product.name || product.productName}</Text>
-                  <Text className="text-xs text-textSecondary mb-1.5" numberOfLines={1}>
+                  <Text className="font-bold text-textPrimary dark:text-white mb-1" numberOfLines={2}>{product.name || product.productName}</Text>
+                  <Text className="text-xs text-textSecondary dark:text-gray-300 mb-1.5" numberOfLines={1}>
                     {CATEGORIES.find(c => c.id === product.category)?.name || product.category}
                   </Text>
                   
@@ -254,7 +254,7 @@ export default function ProductsScreen() {
                         return <Ionicons key={star} name={iconName as any} size={12} color="#f59e0b" />;
                       })}
                     </View>
-                    <Text className="text-[10px] text-textSecondary">
+                    <Text className="text-[10px] text-textSecondary dark:text-gray-300">
                       ({productRatings[product.id]?.count || 0})
                     </Text>
                   </View>
@@ -301,7 +301,7 @@ export default function ProductsScreen() {
             ) : (
               <View className="flex-1 items-center justify-center py-10">
                 <Feather name="inbox" size={48} color="#94A3B8" className="mb-4" />
-                <Text className="text-textSecondary text-base text-center">No products found matching your criteria.</Text>
+                <Text className="text-textSecondary dark:text-gray-300 text-base text-center">No products found matching your criteria.</Text>
               </View>
             )}
           </View>
@@ -311,17 +311,17 @@ export default function ProductsScreen() {
       {/* Filter Modal */}
       <Modal visible={showFilterModal} transparent animationType="slide">
         <View className="flex-1 bg-black/40 justify-end">
-          <View className="bg-white rounded-t-3xl pt-6 pb-8 px-6 max-h-[80%]">
+          <View className="bg-white dark:bg-gray-800 rounded-t-3xl pt-6 pb-8 px-6 max-h-[80%]">
             <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-xl font-black text-textPrimary">Filter & Sort</Text>
-              <TouchableOpacity onPress={() => setShowFilterModal(false)} className="w-8 h-8 bg-slate-100 rounded-full items-center justify-center">
+              <Text className="text-xl font-black text-textPrimary dark:text-white">Filter & Sort</Text>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)} className="w-8 h-8 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center">
                 <Feather name="x" size={18} color="#64748B" />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} className="mb-6">
               {/* Sort Section */}
-              <Text className="text-sm font-bold text-textPrimary mb-3 uppercase tracking-wider">Sort By</Text>
+              <Text className="text-sm font-bold text-textPrimary dark:text-white mb-3 uppercase tracking-wider">Sort By</Text>
               <View className="flex-row flex-wrap gap-2 mb-6">
                 {[
                   { id: 'default', label: 'Recommended' },
@@ -333,12 +333,12 @@ export default function ProductsScreen() {
                     className={`px-4 py-2.5 rounded-xl border ${
                       tempSortOrder === sortOpt.id 
                         ? 'bg-blue-50 border-accent' 
-                        : 'bg-white border-[#e5e7eb]'
+                        : 'bg-white dark:bg-gray-800 border-[#e5e7eb] dark:border-gray-700'
                     }`}
                     onPress={() => setTempSortOrder(sortOpt.id as any)}
                   >
                     <Text className={`font-semibold ${
-                      tempSortOrder === sortOpt.id ? 'text-accent' : 'text-textSecondary'
+                      tempSortOrder === sortOpt.id ? 'text-accent' : 'text-textSecondary dark:text-gray-300'
                     }`}>
                       {sortOpt.label}
                     </Text>
@@ -347,18 +347,18 @@ export default function ProductsScreen() {
               </View>
 
               {/* Category Section */}
-              <Text className="text-sm font-bold text-textPrimary mb-3 uppercase tracking-wider">Category</Text>
+              <Text className="text-sm font-bold text-textPrimary dark:text-white mb-3 uppercase tracking-wider">Category</Text>
               <View className="flex-row flex-wrap gap-2 pb-4">
                 <TouchableOpacity
                   className={`px-4 py-2.5 rounded-xl border ${
                     tempCategory === undefined
                       ? 'bg-blue-50 border-accent' 
-                      : 'bg-white border-[#e5e7eb]'
+                      : 'bg-white dark:bg-gray-800 border-[#e5e7eb] dark:border-gray-700'
                   }`}
                   onPress={() => setTempCategory(undefined)}
                 >
                   <Text className={`font-semibold ${
-                    tempCategory === undefined ? 'text-accent' : 'text-textSecondary'
+                    tempCategory === undefined ? 'text-accent' : 'text-textSecondary dark:text-gray-300'
                   }`}>
                     All Categories
                   </Text>
@@ -370,7 +370,7 @@ export default function ProductsScreen() {
                     className={`px-4 py-2.5 rounded-xl border flex-row items-center ${
                       tempCategory === cat.id 
                         ? 'bg-blue-50 border-accent' 
-                        : 'bg-white border-[#e5e7eb]'
+                        : 'bg-white dark:bg-gray-800 border-[#e5e7eb] dark:border-gray-700'
                     }`}
                     onPress={() => setTempCategory(cat.id)}
                   >
@@ -381,7 +381,7 @@ export default function ProductsScreen() {
                       style={{ marginRight: 6 }} 
                     />
                     <Text className={`font-semibold ${
-                      tempCategory === cat.id ? 'text-accent' : 'text-textSecondary'
+                      tempCategory === cat.id ? 'text-accent' : 'text-textSecondary dark:text-gray-300'
                     }`}>
                       {cat.name}
                     </Text>
@@ -391,12 +391,12 @@ export default function ProductsScreen() {
             </ScrollView>
 
             {/* Bottom Actions */}
-            <View className="flex-row gap-3 pt-4 border-t border-[#e5e7eb]">
+            <View className="flex-row gap-3 pt-4 border-t border-[#e5e7eb] dark:border-gray-700">
               <TouchableOpacity 
-                className="flex-1 py-4 bg-slate-100 rounded-2xl items-center justify-center"
+                className="flex-1 py-4 bg-slate-100 dark:bg-gray-800 rounded-2xl items-center justify-center"
                 onPress={clearFilters}
               >
-                <Text className="font-bold text-textSecondary text-base">Reset</Text>
+                <Text className="font-bold text-textSecondary dark:text-gray-300 text-base">Reset</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 className="flex-[2] py-4 bg-accent rounded-2xl items-center justify-center shadow-lg shadow-accent/30"

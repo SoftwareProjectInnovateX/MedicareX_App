@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { Feather } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -9,6 +10,7 @@ import { WebView } from 'react-native-webview';
 export default function SuccessScreen() {
   const router = useRouter();
   const { orderId, orderData, isCOD } = useLocalSearchParams();
+  const { colorScheme } = useColorScheme();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Parse order data
@@ -157,21 +159,21 @@ export default function SuccessScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f1f5f9]">
+    <SafeAreaView className="flex-1 bg-[#f1f5f9] dark:bg-gray-900">
       {/* Custom Header to allow going back Home */}
-      <View className="flex-row items-center p-4 bg-white border-b border-[#e5e7eb]">
+      <View className="flex-row items-center p-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700">
         <TouchableOpacity onPress={() => router.replace('/(tabs)')} className="mr-4 p-2">
-          <Feather name="x" size={24} color="#0f2a5e" />
+          <Feather name="x" size={24} color={colorScheme === 'dark' ? '#f1f5f9' : '#0f2a5e'} />
         </TouchableOpacity>
-        <Text className="text-xl font-black text-slate-900">Order Confirmed</Text>
+        <Text className="text-xl font-black text-slate-900 dark:text-white">Order Confirmed</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20 }}>
         
         <View className="items-center mb-6 mt-4">
           <Feather name="check-circle" size={60} color="#22c55e" className="mb-3" />
-          <Text className="text-2xl font-black text-slate-900 mb-1">Success!</Text>
-          <Text className="text-sm text-slate-500 text-center px-4 leading-relaxed">
+          <Text className="text-2xl font-black text-slate-900 dark:text-white mb-1">Success!</Text>
+          <Text className="text-sm text-slate-500 dark:text-gray-300 text-center px-4 leading-relaxed">
             {isCashOnDelivery 
               ? "Your order has been placed successfully. Please pay at the time of delivery." 
               : "Your payment was processed successfully."}
@@ -179,7 +181,7 @@ export default function SuccessScreen() {
         </View>
 
         {/* Invoice Preview */}
-        <View className="w-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6" style={{ height: 350 }}>
+        <View className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-700 overflow-hidden mb-6" style={{ height: 350 }}>
           <WebView 
             source={{ html: htmlContent }} 
             style={{ flex: 1 }}

@@ -154,12 +154,12 @@ export default function BrandsScreen() {
   };
 
   const BrandCard = ({ brand }: { brand: any }) => (
-    <View className="bg-white rounded-2xl p-4 mb-4 border border-[#e5e7eb] shadow-sm">
+    <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 border border-[#e5e7eb] dark:border-gray-700 shadow-sm">
       <View className="flex-row justify-between items-start">
         <View className="flex-1">
           <Text className="text-xs uppercase font-bold text-accent mb-1">{brand.category || 'Health brand'}</Text>
-          <Text className="text-lg font-bold text-textPrimary">{brand.name}</Text>
-          <Text className="text-sm text-textSecondary mt-1">{brand.tagline || brand.description?.slice(0, 65)}</Text>
+          <Text className="text-lg font-bold text-textPrimary dark:text-white">{brand.name}</Text>
+          <Text className="text-sm text-textSecondary dark:text-gray-300 mt-1">{brand.tagline || brand.description?.slice(0, 65)}</Text>
         </View>
         <View className={`px-2 py-1 rounded-full ${brand.external ? 'bg-blue-100' : 'bg-green-100'}`}>
           <Text className={`text-[10px] font-bold ${brand.external ? 'text-blue-700' : 'text-green-700'}`}>
@@ -180,39 +180,39 @@ export default function BrandsScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
-      <View className="flex-row items-center p-4 border-b border-[#e5e7eb] bg-white">
+    <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
+      <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
           <Feather name="arrow-left" size={24} color="#0f2a5e" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-textPrimary">Explore Brands</Text>
+        <Text className="text-xl font-bold text-textPrimary dark:text-white">Explore Brands</Text>
       </View>
 
       <ScrollView className="flex-1 p-4" contentContainerStyle={{ paddingBottom: 40 }}>
         
         {/* HERO SECTION */}
-        <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-[#e5e7eb]">
-          <View className="bg-accentLight self-start px-3 py-1 rounded-full mb-3">
+        <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 mb-6 shadow-sm border border-[#e5e7eb] dark:border-gray-700">
+          <View className="bg-accentLight dark:bg-gray-800 self-start px-3 py-1 rounded-full mb-3">
             <Text className="text-accent text-[10px] font-bold uppercase tracking-widest">Trusted Medical Brands</Text>
           </View>
-          <Text className="text-2xl font-bold text-textPrimary leading-tight">
+          <Text className="text-2xl font-bold text-textPrimary dark:text-white leading-tight">
             Explore medicine brands with{'\n'}
             <Text className="text-accent">AI-powered guidance.</Text>
           </Text>
-          <Text className="text-sm text-textSecondary mt-2 leading-5">
+          <Text className="text-sm text-textSecondary dark:text-gray-300 mt-2 leading-5">
             Compare trusted global names with local catalog recommendations. Every brand is verified for your health needs.
           </Text>
           
           <View className="flex-row flex-wrap gap-2 mt-4">
-            <View className="bg-accentLight px-3 py-1.5 rounded-full flex-row items-center border border-accentMid mr-2 mb-2">
+            <View className="bg-accentLight dark:bg-gray-800 px-3 py-1.5 rounded-full flex-row items-center border border-accentMid mr-2 mb-2">
               <Globe size={12} color="#1a87e1" />
               <Text className="text-xs font-semibold text-accent ml-1">Global brands</Text>
             </View>
-            <View className="bg-accentLight px-3 py-1.5 rounded-full flex-row items-center border border-accentMid mr-2 mb-2">
+            <View className="bg-accentLight dark:bg-gray-800 px-3 py-1.5 rounded-full flex-row items-center border border-accentMid mr-2 mb-2">
               <Bot size={12} color="#1a87e1" />
               <Text className="text-xs font-semibold text-accent ml-1">AI matching</Text>
             </View>
-            <View className="bg-accentLight px-3 py-1.5 rounded-full flex-row items-center border border-accentMid mr-2 mb-2">
+            <View className="bg-accentLight dark:bg-gray-800 px-3 py-1.5 rounded-full flex-row items-center border border-accentMid mr-2 mb-2">
               <Verified size={12} color="#1a87e1" />
               <Text className="text-xs font-semibold text-accent ml-1">Verified</Text>
             </View>
@@ -232,7 +232,7 @@ export default function BrandsScreen() {
           </View>
 
           <Text className="font-semibold text-slate-900 mb-2">What do you need help with?</Text>
-          <View className="bg-white rounded-2xl flex-row items-center px-4 py-3 border border-[#bfdbfe] mb-3">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl flex-row items-center px-4 py-3 border border-[#bfdbfe] mb-3">
             <TextInput 
               placeholder="e.g. immune support, pain relief"
               className="flex-1 text-slate-900"
@@ -248,7 +248,7 @@ export default function BrandsScreen() {
               <TouchableOpacity
                 key={preset}
                 onPress={() => setHealthGoal(preset)}
-                className={`mr-2 px-4 py-2 rounded-full border ${healthGoal === preset ? 'bg-accent border-accent' : 'bg-white border-blue-200'}`}
+                className={`mr-2 px-4 py-2 rounded-full border ${healthGoal === preset ? 'bg-accent border-accent' : 'bg-white dark:bg-gray-800 border-blue-200'}`}
               >
                 <Text className={`text-xs font-semibold ${healthGoal === preset ? 'text-white' : 'text-accent'}`}>{preset}</Text>
               </TouchableOpacity>
@@ -263,14 +263,14 @@ export default function BrandsScreen() {
               <Text className="text-white font-bold text-sm">Recommend brands</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              className="bg-white border border-blue-300 rounded-2xl py-3 px-4 items-center justify-center"
+              className="bg-white dark:bg-gray-800 border border-blue-300 rounded-2xl py-3 px-4 items-center justify-center"
               onPress={() => { setHealthGoal(''); setRecommendation({ title: '', summary: '', brands: [] }); setTopic(''); }}
             >
               <Text className="text-blue-700 font-bold text-sm">Reset</Text>
             </TouchableOpacity>
           </View>
 
-          <View className="bg-white/80 rounded-2xl p-4 border border-blue-200">
+          <View className="bg-white dark:bg-gray-800/80 rounded-2xl p-4 border border-blue-200">
             {!recommendation.title ? (
               <View>
                 <Text className="font-bold text-slate-900 mb-1">Try a quick health goal</Text>
@@ -306,13 +306,13 @@ export default function BrandsScreen() {
         </View>
 
         {/* SEARCH & FILTERS */}
-        <View className="bg-white rounded-2xl p-5 shadow-sm border border-[#e5e7eb] mb-6">
+        <View className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-[#e5e7eb] dark:border-gray-700 mb-6">
           <Text className="text-xs uppercase font-bold text-textMuted tracking-wider mb-3">Search & Filter</Text>
-          <View className="flex-row bg-primary rounded-xl px-4 py-3 border border-[#e5e7eb] mb-4 items-center">
+          <View className="flex-row bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 border border-[#e5e7eb] dark:border-gray-700 mb-4 items-center">
             <Search size={18} color="#94a3b8" />
             <TextInput 
               placeholder="Search brands..."
-              className="flex-1 ml-3 text-textPrimary"
+              className="flex-1 ml-3 text-textPrimary dark:text-white"
               placeholderTextColor="#94a3b8"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -323,9 +323,9 @@ export default function BrandsScreen() {
               <TouchableOpacity
                 key={cat}
                 onPress={() => setSelectedCategory(cat)}
-                className={`mr-2 px-4 py-2 rounded-full border ${selectedCategory === cat ? 'bg-accent border-accent' : 'bg-primary border-accentMid'}`}
+                className={`mr-2 px-4 py-2 rounded-full border ${selectedCategory === cat ? 'bg-accent border-accent' : 'bg-primary dark:bg-gray-900 border-accentMid'}`}
               >
-                <Text className={`text-xs font-semibold ${selectedCategory === cat ? 'text-white' : 'text-textSecondary'}`}>{cat}</Text>
+                <Text className={`text-xs font-semibold ${selectedCategory === cat ? 'text-white' : 'text-textSecondary dark:text-gray-300'}`}>{cat}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -333,7 +333,7 @@ export default function BrandsScreen() {
 
         {/* BRAND LIST */}
         <View className="flex-row justify-between items-center mb-4 px-1">
-          <Text className="font-bold text-textPrimary text-lg">All Brands <Text className="text-sm font-normal text-textMuted">({filteredBrands.length})</Text></Text>
+          <Text className="font-bold text-textPrimary dark:text-white text-lg">All Brands <Text className="text-sm font-normal text-textMuted">({filteredBrands.length})</Text></Text>
           {(searchQuery || selectedCategory !== 'All') && (
             <TouchableOpacity onPress={() => { setSearchQuery(''); setSelectedCategory('All'); }}>
               <Text className="text-accent text-xs font-semibold underline">Clear filters</Text>
@@ -346,10 +346,10 @@ export default function BrandsScreen() {
             <BrandCard key={brand.id || brand.name} brand={{...brand, external: false}} />
           ))
         ) : (
-          <View className="bg-white rounded-2xl py-12 px-6 items-center border border-[#e5e7eb]">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl py-12 px-6 items-center border border-[#e5e7eb] dark:border-gray-700">
             <Search size={40} color="#cbd5e1" className="mb-3" />
-            <Text className="font-bold text-textPrimary text-base">No brands found</Text>
-            <Text className="text-textSecondary text-sm text-center mt-1">Try a different search term or category.</Text>
+            <Text className="font-bold text-textPrimary dark:text-white text-base">No brands found</Text>
+            <Text className="text-textSecondary dark:text-gray-300 text-sm text-center mt-1">Try a different search term or category.</Text>
             <TouchableOpacity 
               className="mt-4 bg-accent px-6 py-2 rounded-full"
               onPress={() => { setSearchQuery(''); setSelectedCategory('All'); }}

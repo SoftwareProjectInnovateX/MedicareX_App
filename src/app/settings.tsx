@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { useAuth } from '../context/AuthContext';
 import { db, auth } from '../services/firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
@@ -10,6 +11,7 @@ import { updatePassword } from 'firebase/auth';
 export default function SettingsScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colorScheme } = useColorScheme();
 
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -113,23 +115,23 @@ export default function SettingsScreen() {
 
   if (loadingInitial) {
     return (
-      <View className="flex-1 bg-primary items-center justify-center">
+      <View className="flex-1 bg-primary dark:bg-gray-900 items-center justify-center">
         <ActivityIndicator size="large" color="#1a87e1" />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-primary dark:bg-gray-900">
       {/* Header */}
-      <View className="px-6 pt-14 pb-4 bg-white border-b border-[#e5e7eb] flex-row justify-between items-center shadow-sm z-10">
+      <View className="px-6 pt-14 pb-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700 flex-row justify-between items-center shadow-sm z-10">
         <TouchableOpacity 
-          className="w-10 h-10 bg-slate-100 rounded-full items-center justify-center"
+          className="w-10 h-10 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center"
           onPress={() => router.back()}
         >
-          <Feather name="arrow-left" color="#1E293B" size={20} />
+          <Feather name="arrow-left" color={colorScheme === 'dark' ? '#f1f5f9' : '#1E293B'} size={20} />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-textPrimary">Settings</Text>
+        <Text className="text-xl font-bold text-textPrimary dark:text-white">Settings</Text>
         <View className="w-10" />
       </View>
 
@@ -140,30 +142,30 @@ export default function SettingsScreen() {
         <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
           
           <View className="mb-6">
-            <Text className="text-3xl font-black text-textPrimary">Account Settings</Text>
-            <Text className="text-textSecondary text-sm font-medium mt-1">Manage your profile, personal goals, and security.</Text>
+            <Text className="text-3xl font-black text-textPrimary dark:text-white">Account Settings</Text>
+            <Text className="text-textSecondary dark:text-gray-300 text-sm font-medium mt-1">Manage your profile, personal goals, and security.</Text>
           </View>
 
           {/* Personal Information */}
-          <View className="bg-white rounded-3xl shadow-sm border border-[#e5e7eb] overflow-hidden mb-6">
-            <View className="bg-slate-50 border-b border-[#e5e7eb] p-4 flex-row items-center">
+          <View className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-[#e5e7eb] dark:border-gray-700 overflow-hidden mb-6">
+            <View className="bg-slate-50 dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700 p-4 flex-row items-center">
               <Feather name="user" color="#1a87e1" size={20} />
-              <Text className="text-lg font-black text-textPrimary ml-3">Personal Information</Text>
+              <Text className="text-lg font-black text-textPrimary dark:text-white ml-3">Personal Information</Text>
             </View>
             <View className="p-5 space-y-4">
               <View>
-                <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Full Name</Text>
+                <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Full Name</Text>
                 <TextInput 
-                  className="bg-primary rounded-xl px-4 py-3 text-textPrimary font-bold border border-[#e5e7eb]"
+                  className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 text-textPrimary dark:text-white font-bold border border-[#e5e7eb] dark:border-gray-700"
                   value={profile.name}
                   onChangeText={(text) => setProfile({...profile, name: text})}
                   placeholder="Your Name"
                 />
               </View>
               <View>
-                <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Email Address</Text>
+                <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Email Address</Text>
                 <TextInput 
-                  className="bg-primary rounded-xl px-4 py-3 text-textPrimary font-bold border border-[#e5e7eb]"
+                  className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 text-textPrimary dark:text-white font-bold border border-[#e5e7eb] dark:border-gray-700"
                   value={profile.email}
                   onChangeText={(text) => setProfile({...profile, email: text})}
                   keyboardType="email-address"
@@ -172,9 +174,9 @@ export default function SettingsScreen() {
                 />
               </View>
               <View>
-                <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Contact Number</Text>
+                <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Contact Number</Text>
                 <TextInput 
-                  className="bg-primary rounded-xl px-4 py-3 text-textPrimary font-bold border border-[#e5e7eb]"
+                  className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 text-textPrimary dark:text-white font-bold border border-[#e5e7eb] dark:border-gray-700"
                   value={profile.contact}
                   onChangeText={(text) => setProfile({...profile, contact: text})}
                   keyboardType="phone-pad"
@@ -182,9 +184,9 @@ export default function SettingsScreen() {
                 />
               </View>
               <View>
-                <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Delivery Address</Text>
+                <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Delivery Address</Text>
                 <TextInput 
-                  className="bg-primary rounded-xl px-4 py-3 text-textPrimary font-bold border border-[#e5e7eb]"
+                  className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 text-textPrimary dark:text-white font-bold border border-[#e5e7eb] dark:border-gray-700"
                   value={profile.address}
                   onChangeText={(text) => setProfile({...profile, address: text})}
                   placeholder="Home Address"
@@ -194,14 +196,14 @@ export default function SettingsScreen() {
           </View>
 
           {/* Personal Health Goals */}
-          <View className="bg-white rounded-3xl shadow-sm border border-[#e5e7eb] overflow-hidden mb-6">
-            <View className="bg-slate-50 border-b border-[#e5e7eb] p-4 flex-row items-center justify-between">
+          <View className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-[#e5e7eb] dark:border-gray-700 overflow-hidden mb-6">
+            <View className="bg-slate-50 dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700 p-4 flex-row items-center justify-between">
               <View className="flex-row items-center">
                 <Feather name="target" color="#9333EA" size={20} />
-                <Text className="text-lg font-black text-textPrimary ml-3">Health Goals</Text>
+                <Text className="text-lg font-black text-textPrimary dark:text-white ml-3">Health Goals</Text>
               </View>
-              <View className="bg-white px-2 py-1 rounded border border-[#e5e7eb]">
-                <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest">
+              <View className="bg-white dark:bg-gray-800 px-2 py-1 rounded border border-[#e5e7eb] dark:border-gray-700">
+                <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest">
                   {goals.filter(g => g.completed).length} / {goals.length}
                 </Text>
               </View>
@@ -210,13 +212,13 @@ export default function SettingsScreen() {
               {goals.map(goal => (
                 <View 
                   key={goal.id} 
-                  className={`flex-row items-center justify-between p-3 rounded-xl border mb-3 ${goal.completed ? 'bg-green-50 border-green-200' : 'bg-white border-[#e5e7eb]'}`}
+                  className={`flex-row items-center justify-between p-3 rounded-xl border mb-3 ${goal.completed ? 'bg-green-50 border-green-200' : 'bg-white dark:bg-gray-800 border-[#e5e7eb] dark:border-gray-700'}`}
                 >
                   <TouchableOpacity className="flex-row items-center flex-1" onPress={() => toggleGoal(goal.id)}>
                     <View className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-3 ${goal.completed ? 'bg-green-500 border-green-500' : 'border-[#CBD5E1]'}`}>
                       {goal.completed && <Feather name="check" color="#ffffff" size={14} />}
                     </View>
-                    <Text className={`font-bold flex-1 ${goal.completed ? 'text-green-800 line-through opacity-70' : 'text-textPrimary'}`}>
+                    <Text className={`font-bold flex-1 ${goal.completed ? 'text-green-800 line-through opacity-70' : 'text-textPrimary dark:text-white'}`}>
                       {goal.text}
                     </Text>
                   </TouchableOpacity>
@@ -227,10 +229,10 @@ export default function SettingsScreen() {
               ))}
               
               <View className="flex-row items-center mt-2">
-                <View className="flex-1 flex-row items-center bg-primary rounded-xl px-4 border border-[#e5e7eb]">
+                <View className="flex-1 flex-row items-center bg-primary dark:bg-gray-900 rounded-xl px-4 border border-[#e5e7eb] dark:border-gray-700">
                   <Feather name="plus" color="#94A3B8" size={16} />
                   <TextInput 
-                    className="flex-1 py-3 ml-2 text-textPrimary font-bold"
+                    className="flex-1 py-3 ml-2 text-textPrimary dark:text-white font-bold"
                     placeholder="Type a new goal..."
                     value={newGoal}
                     onChangeText={setNewGoal}
@@ -248,16 +250,16 @@ export default function SettingsScreen() {
           </View>
 
           {/* Account Security */}
-          <View className="bg-white rounded-3xl shadow-sm border border-[#e5e7eb] overflow-hidden mb-8">
-            <View className="bg-slate-50 border-b border-[#e5e7eb] p-4 flex-row items-center">
+          <View className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-[#e5e7eb] dark:border-gray-700 overflow-hidden mb-8">
+            <View className="bg-slate-50 dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700 p-4 flex-row items-center">
               <Feather name="lock" color="#F59E0B" size={20} />
-              <Text className="text-lg font-black text-textPrimary ml-3">Security</Text>
+              <Text className="text-lg font-black text-textPrimary dark:text-white ml-3">Security</Text>
             </View>
             <View className="p-5 space-y-4">
               <View>
-                <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">New Password</Text>
+                <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">New Password</Text>
                 <TextInput 
-                  className="bg-primary rounded-xl px-4 py-3 text-textPrimary font-bold border border-[#e5e7eb]"
+                  className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 text-textPrimary dark:text-white font-bold border border-[#e5e7eb] dark:border-gray-700"
                   value={passwords.newPass}
                   onChangeText={(text) => setPasswords({...passwords, newPass: text})}
                   secureTextEntry
@@ -265,9 +267,9 @@ export default function SettingsScreen() {
                 />
               </View>
               <View>
-                <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Confirm Password</Text>
+                <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Confirm Password</Text>
                 <TextInput 
-                  className="bg-primary rounded-xl px-4 py-3 text-textPrimary font-bold border border-[#e5e7eb]"
+                  className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 text-textPrimary dark:text-white font-bold border border-[#e5e7eb] dark:border-gray-700"
                   value={passwords.confirm}
                   onChangeText={(text) => setPasswords({...passwords, confirm: text})}
                   secureTextEntry

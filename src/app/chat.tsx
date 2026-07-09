@@ -124,14 +124,14 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
+    <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
       {/* Header */}
       <View className="bg-[#1a87e1] px-4 py-3 flex-row items-center shadow-md">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
           <Feather name="arrow-left" size={24} color="#ffffff" />
         </TouchableOpacity>
         
-        <View className="w-8 h-8 bg-white rounded-full items-center justify-center overflow-hidden">
+        <View className="w-8 h-8 bg-white dark:bg-gray-800 rounded-full items-center justify-center overflow-hidden">
           <MaterialCommunityIcons name="shield-plus" color="#1a87e1" size={20} />
         </View>
         
@@ -176,16 +176,16 @@ export default function ChatScreen() {
                 className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                   msg.role === 'user' 
                     ? 'bg-[#1a87e1] rounded-br-sm' 
-                    : 'bg-white border border-[#e5e7eb] rounded-bl-sm'
+                    : 'bg-white dark:bg-gray-800 border border-[#e5e7eb] dark:border-gray-700 rounded-bl-sm'
                 }`}
               >
                 <Text 
-                  className={`${msg.role === 'user' ? 'text-white' : 'text-textPrimary'} text-sm leading-5`}
+                  className={`${msg.role === 'user' ? 'text-white' : 'text-textPrimary dark:text-white'} text-sm leading-5`}
                 >
                   {msg.role === 'bot' && msg.text.includes("⚕️") ? (
                     <>
                       {msg.text.replace(/⚕️.*$/, "")}
-                      <Text className="text-[10px] text-textSecondary italic mt-2">
+                      <Text className="text-[10px] text-textSecondary dark:text-gray-300 italic mt-2">
                         {"\n\n"}⚕️ This is general health information only. It is not a substitute for professional medical advice.
                       </Text>
                     </>
@@ -202,19 +202,19 @@ export default function ChatScreen() {
               <View className="w-7 h-7 bg-blue-100 rounded-full items-center justify-center mr-2 mt-1">
                 <Text className="text-[#1a87e1] text-sm font-bold">+</Text>
               </View>
-              <View className="bg-white border border-[#e5e7eb] px-4 py-4 rounded-2xl rounded-bl-sm flex-row items-center">
+              <View className="bg-white dark:bg-gray-800 border border-[#e5e7eb] dark:border-gray-700 px-4 py-4 rounded-2xl rounded-bl-sm flex-row items-center">
                 <BouncingDots />
               </View>
             </View>
           )}
         </ScrollView>
 
-        <View className="p-3 bg-white border-t border-[#e5e7eb] flex-row items-center">
+        <View className="p-3 bg-white dark:bg-gray-800 border-t border-[#e5e7eb] dark:border-gray-700 flex-row items-center">
           <TextInput 
             value={input}
             onChangeText={setInput}
             placeholder="Describe your symptoms..."
-            className="flex-1 bg-white rounded-xl px-4 py-2.5 border-2 border-[#e5e7eb] text-textPrimary mr-2"
+            className="flex-1 bg-white dark:bg-gray-800 rounded-xl px-4 py-2.5 border-2 border-[#e5e7eb] dark:border-gray-700 text-textPrimary dark:text-white mr-2"
             multiline
             maxLength={500}
             style={{ minHeight: 44, maxHeight: 100 }}
@@ -227,8 +227,8 @@ export default function ChatScreen() {
             <Feather name="send" color="#ffffff" size={18} />
           </TouchableOpacity>
         </View>
-        <View className="bg-white pb-2 pt-1">
-          <Text className="text-center text-[10px] text-textSecondary">
+        <View className="bg-white dark:bg-gray-800 pb-2 pt-1">
+          <Text className="text-center text-[10px] text-textSecondary dark:text-gray-300">
             For emergencies, call your local emergency number immediately
           </Text>
         </View>

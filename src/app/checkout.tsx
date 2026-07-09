@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Modal, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCartStore } from '../stores/cartStore';
@@ -14,6 +15,7 @@ export default function CheckoutScreen() {
   const router = useRouter();
   const { items, clearCart } = useCartStore();
   const { user } = useAuth();
+  const { colorScheme } = useColorScheme();
 
   const [formData, setFormData] = useState({
     email: user?.email || '',
@@ -260,14 +262,14 @@ export default function CheckoutScreen() {
   const cities = formData.district ? DISTRICTS_CITIES[formData.district] || [] : [];
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f1f5f9]">
-      <View className="flex-row items-center p-4 bg-white border-b border-[#e5e7eb]">
+    <SafeAreaView className="flex-1 bg-[#f1f5f9] dark:bg-gray-900">
+      <View className="flex-row items-center p-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700">
         <TouchableOpacity onPress={() => router.back()} className="mr-4 p-2">
-          <Feather name="arrow-left" size={24} color="#0f2a5e" />
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#f1f5f9' : '#0f2a5e'} />
         </TouchableOpacity>
         <View>
           <Text className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Secure Payment</Text>
-          <Text className="text-xl font-black text-slate-900">Checkout</Text>
+          <Text className="text-xl font-black text-slate-800 dark:text-gray-300">Checkout</Text>
         </View>
       </View>
       
@@ -278,12 +280,12 @@ export default function CheckoutScreen() {
           {savedAddresses.length > 0 && (
             <View className="mb-6">
               <Text className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Address Book</Text>
-              <Text className="font-black text-slate-900 text-xl mb-4">Saved Addresses</Text>
+              <Text className="font-black text-slate-800 dark:text-gray-300 text-xl mb-4">Saved Addresses</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} className="overflow-visible pb-2 -mx-4 px-4">
                 {savedAddresses.map((addr) => (
                   <TouchableOpacity
                     key={addr.id}
-                    className="bg-white p-4 rounded-2xl border border-[#e5e7eb] shadow-sm mr-4 w-64"
+                    className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-[#e5e7eb] dark:border-gray-700 shadow-sm mr-4 w-64"
                     onPress={() => {
                       setFormData(prev => ({
                         ...prev,
@@ -299,15 +301,15 @@ export default function CheckoutScreen() {
                     }}
                   >
                     <View className="flex-row items-center mb-2">
-                      <Feather name="map-pin" size={16} color="#1a87e1" />
-                      <Text className="font-bold text-slate-800 ml-2" numberOfLines={1}>
+                      <Feather name="map-pin" size={16} color={colorScheme === 'dark' ? '#f1f5f9' : '#1E293B'} />
+                      <Text className="font-bold text-slate-800 dark:text-gray-300 ml-2" numberOfLines={1}>
                         {addr.firstName} {addr.lastName}
                       </Text>
                     </View>
-                    <Text className="text-slate-600 text-xs mb-1" numberOfLines={2}>
+                    <Text className="text-slate-800 dark:text-gray-300 text-xs mb-1" numberOfLines={2}>
                       {addr.houseNumber}, {addr.laneStreet}, {addr.city}
                     </Text>
-                    <Text className="text-slate-500 text-xs">{addr.phone}</Text>
+                    <Text className="text-slate-800 dark:text-gray-300 text-xs">{addr.phone}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -315,15 +317,15 @@ export default function CheckoutScreen() {
           )}
 
           {/* Billing Details */}
-          <View className="bg-white rounded-2xl p-6 shadow-sm border border-[#e5e7eb] mb-6">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-[#e5e7eb] dark:border-gray-700 mb-6">
             <Text className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Information</Text>
-            <Text className="font-black text-slate-900 text-xl mb-6">Billing Details</Text>
+            <Text className="font-black text-slate-800 dark:text-gray-300 text-xl mb-6">Billing Details</Text>
             
             <View className="mb-4">
-              <Text className="text-[12px] font-bold mb-2 text-slate-500 uppercase tracking-wider">Email address *</Text>
+              <Text className="text-[12px] font-bold mb-2 text-slate-800 dark:text-gray-300 uppercase tracking-wider">Email address *</Text>
               <TextInput 
                 placeholder="Enter your email" 
-                className={`bg-slate-50 px-4 py-3 rounded-xl border ${errors.email ? 'border-red-500' : 'border-blue-200/60'} text-slate-900 font-medium`}
+                className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border ${errors.email ? 'border-red-500' : 'border-blue-200/60'} text-slate-800 dark:text-gray-300 font-medium`}
                 value={formData.email}
                 onChangeText={(val) => handleInputChange('email', val)}
                 keyboardType="email-address"
@@ -334,18 +336,18 @@ export default function CheckoutScreen() {
 
             <View className="flex-row gap-4 mb-4">
               <View className="flex-1">
-                <Text className="text-[12px] font-bold mb-2 text-slate-500 uppercase tracking-wider">First Name *</Text>
+                <Text className="text-[12px] font-bold mb-2 text-slate-800 dark:text-gray-300 uppercase tracking-wider">First Name *</Text>
                 <TextInput 
-                  className={`bg-slate-50 px-4 py-3 rounded-xl border ${errors.firstName ? 'border-red-500' : 'border-blue-200/60'} text-slate-900 font-medium`}
+                  className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border ${errors.firstName ? 'border-red-500' : 'border-blue-200/60'} text-slate-800 dark:text-gray-300 font-medium`}
                   value={formData.firstName}
                   onChangeText={(val) => handleInputChange('firstName', val)}
                 />
                 {renderError('firstName')}
               </View>
               <View className="flex-1">
-                <Text className="text-[12px] font-bold mb-2 text-slate-500 uppercase tracking-wider">Last Name *</Text>
+                <Text className="text-[12px] font-bold mb-2 text-slate-800 dark:text-gray-300 uppercase tracking-wider">Last Name *</Text>
                 <TextInput 
-                  className={`bg-slate-50 px-4 py-3 rounded-xl border ${errors.lastName ? 'border-red-500' : 'border-blue-200/60'} text-slate-900 font-medium`}
+                  className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border ${errors.lastName ? 'border-red-500' : 'border-blue-200/60'} text-slate-800 dark:text-gray-300 font-medium`}
                   value={formData.lastName}
                   onChangeText={(val) => handleInputChange('lastName', val)}
                 />
@@ -354,12 +356,12 @@ export default function CheckoutScreen() {
             </View>
 
             <View className="mb-4">
-              <Text className="text-[12px] font-bold mb-2 text-slate-500 uppercase tracking-wider">District *</Text>
+              <Text className="text-[12px] font-bold mb-2 text-slate-800 dark:text-gray-300 uppercase tracking-wider">District *</Text>
               <TouchableOpacity 
-                className={`bg-slate-50 px-4 py-3 rounded-xl border ${errors.district ? 'border-red-500' : 'border-blue-200/60'} flex-row justify-between items-center`}
+                className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border ${errors.district ? 'border-red-500' : 'border-blue-200/60'} flex-row justify-between items-center`}
                 onPress={() => setDistrictModalVisible(true)}
               >
-                <Text className={`font-medium ${formData.district ? 'text-slate-900' : 'text-slate-400'}`}>
+                <Text className={`font-medium ${formData.district ? 'text-slate-800 dark:text-gray-300' : 'text-slate-400'}`}>
                   {formData.district || 'Select District'}
                 </Text>
                 <Feather name="chevron-down" size={20} color="#64748b" />
@@ -368,13 +370,13 @@ export default function CheckoutScreen() {
             </View>
 
             <View className="mb-4">
-              <Text className="text-[12px] font-bold mb-2 text-slate-500 uppercase tracking-wider">Main City *</Text>
+              <Text className="text-[12px] font-bold mb-2 text-slate-800 dark:text-gray-300 uppercase tracking-wider">Main City *</Text>
               <TouchableOpacity 
-                className={`bg-slate-50 px-4 py-3 rounded-xl border ${errors.city ? 'border-red-500' : 'border-blue-200/60'} flex-row justify-between items-center ${!formData.district ? 'opacity-50' : ''}`}
+                className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border ${errors.city ? 'border-red-500' : 'border-blue-200/60'} flex-row justify-between items-center ${!formData.district ? 'opacity-50' : ''}`}
                 onPress={() => formData.district && setCityModalVisible(true)}
                 disabled={!formData.district}
               >
-                <Text className={`font-medium ${formData.city ? 'text-slate-900' : 'text-slate-400'}`}>
+                <Text className={`font-medium ${formData.city ? 'text-slate-800 dark:text-gray-300' : 'text-slate-400'}`}>
                   {formData.city || 'Select City'}
                 </Text>
                 <Feather name="chevron-down" size={20} color="#64748b" />
@@ -383,17 +385,17 @@ export default function CheckoutScreen() {
             </View>
 
             <View className="mb-4">
-              <Text className="text-[12px] font-bold mb-2 text-slate-500 uppercase tracking-wider">Street Address *</Text>
+              <Text className="text-[12px] font-bold mb-2 text-slate-800 dark:text-gray-300 uppercase tracking-wider">Street Address *</Text>
               <TextInput 
                 placeholder="House Number / Name" 
-                className={`bg-slate-50 px-4 py-3 rounded-xl border ${errors.houseNumber ? 'border-red-500' : 'border-blue-200/60'} text-slate-900 font-medium mb-3`}
+                className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border ${errors.houseNumber ? 'border-red-500' : 'border-blue-200/60'} text-slate-800 dark:text-gray-300 font-medium mb-3`}
                 value={formData.houseNumber}
                 onChangeText={(val) => handleInputChange('houseNumber', val)}
               />
               {renderError('houseNumber')}
               <TextInput 
                 placeholder="Lane / Street" 
-                className={`bg-slate-50 px-4 py-3 rounded-xl border ${errors.laneStreet ? 'border-red-500' : 'border-blue-200/60'} text-slate-900 font-medium`}
+                className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border ${errors.laneStreet ? 'border-red-500' : 'border-blue-200/60'} text-slate-800 dark:text-gray-300 font-medium`}
                 value={formData.laneStreet}
                 onChangeText={(val) => handleInputChange('laneStreet', val)}
               />
@@ -401,10 +403,10 @@ export default function CheckoutScreen() {
             </View>
 
             <View className="mb-4">
-              <Text className="text-[12px] font-bold mb-2 text-slate-500 uppercase tracking-wider">Primary Phone *</Text>
+              <Text className="text-[12px] font-bold mb-2 text-slate-800 dark:text-gray-300 uppercase tracking-wider">Primary Phone *</Text>
               <TextInput 
                 placeholder="07xxxxxx" 
-                className={`bg-slate-50 px-4 py-3 rounded-xl border ${errors.phone ? 'border-red-500' : 'border-blue-200/60'} text-slate-900 font-medium`}
+                className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border ${errors.phone ? 'border-red-500' : 'border-blue-200/60'} text-slate-800 dark:text-gray-300 font-medium`}
                 value={formData.phone}
                 onChangeText={(val) => handleInputChange('phone', val)}
                 keyboardType="phone-pad"
@@ -413,10 +415,10 @@ export default function CheckoutScreen() {
             </View>
 
             <View className="mb-4">
-              <Text className="text-[12px] font-bold mb-2 text-slate-500 uppercase tracking-wider">Secondary Phone (Optional)</Text>
+              <Text className="text-[12px] font-bold mb-2 text-slate-800 dark:text-gray-300 uppercase tracking-wider">Secondary Phone (Optional)</Text>
               <TextInput 
                 placeholder="Alternative contact" 
-                className={`bg-slate-50 px-4 py-3 rounded-xl border border-blue-200/60 text-slate-900 font-medium`}
+                className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border border-blue-200/60 text-slate-800 dark:text-gray-300 font-medium`}
                 value={formData.secondaryPhone}
                 onChangeText={(val) => handleInputChange('secondaryPhone', val)}
                 keyboardType="phone-pad"
@@ -424,10 +426,10 @@ export default function CheckoutScreen() {
             </View>
 
             <View className="mb-2">
-              <Text className="text-[12px] font-bold mb-2 text-slate-500 uppercase tracking-wider">Order Notes (Optional)</Text>
+              <Text className="text-[12px] font-bold mb-2 text-slate-800 dark:text-gray-300 uppercase tracking-wider">Order Notes (Optional)</Text>
               <TextInput 
                 placeholder="Special notes for delivery..." 
-                className={`bg-slate-50 px-4 py-3 rounded-xl border border-blue-200/60 text-slate-900 font-medium h-24`}
+                className={`bg-slate-50 dark:bg-gray-800 px-4 py-3 rounded-xl border border-blue-200/60 text-slate-800 dark:text-gray-300 font-medium h-24`}
                 value={formData.orderNotes}
                 onChangeText={(val) => handleInputChange('orderNotes', val)}
                 multiline
@@ -438,52 +440,52 @@ export default function CheckoutScreen() {
             {/* Save Address Toggle */}
             {user?.uid && (
               <TouchableOpacity 
-                className={`flex-row items-center mt-2 p-4 rounded-xl border ${saveAddressToBook ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}
+                className={`flex-row items-center mt-2 p-4 rounded-xl border ${saveAddressToBook ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200' : 'bg-slate-50 dark:bg-gray-800 border-slate-200 dark:border-gray-700'}`}
                 onPress={() => setSaveAddressToBook(!saveAddressToBook)}
               >
-                <View className={`w-5 h-5 rounded border items-center justify-center mr-3 ${saveAddressToBook ? 'bg-accent border-accent' : 'border-slate-300 bg-white'}`}>
+                <View className={`w-5 h-5 rounded border items-center justify-center mr-3 ${saveAddressToBook ? 'bg-accent border-accent' : 'border-slate-300 bg-white dark:bg-gray-800'}`}>
                   {saveAddressToBook && <Feather name="check" size={14} color="#ffffff" />}
                 </View>
-                <Text className="flex-1 text-slate-700 font-medium">Save this address to my Address Book</Text>
+                <Text className="flex-1 text-slate-800 dark:text-gray-300 font-medium">Save this address to my Address Book</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Order Summary */}
-          <View className="bg-white rounded-2xl p-6 shadow-sm border border-[#e5e7eb] mb-6">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-[#e5e7eb] dark:border-gray-700 mb-6">
             <Text className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-1">Summary</Text>
-            <Text className="font-black text-slate-900 text-xl mb-6">Your order</Text>
+            <Text className="font-black text-slate-800 dark:text-gray-300 text-xl mb-6">Your order</Text>
             
             <View className="space-y-4 mb-4">
               {items.map(item => (
                 <View key={item.id} className="flex-row justify-between items-start">
                   <View className="flex-row flex-1">
-                    <View className="w-12 h-12 bg-slate-100 rounded-xl mr-3 items-center justify-center border border-slate-200">
+                    <View className="w-12 h-12 bg-slate-100 dark:bg-gray-800 rounded-xl mr-3 items-center justify-center border border-slate-200 dark:border-gray-700">
                       <Text className="text-slate-400 font-bold">{item.name.charAt(0)}</Text>
                     </View>
                     <View className="flex-1 justify-center pr-2">
-                      <Text className="text-blue-900 font-bold text-sm leading-tight">{item.name}</Text>
+                      <Text className="text-blue-900 dark:text-blue-400 font-bold text-sm leading-tight">{item.name}</Text>
                       <View className="flex-row items-center mt-1">
-                        <View className="bg-slate-100 px-2 py-0.5 rounded mr-2">
-                          <Text className="text-[10px] font-bold text-slate-600">QTY: {item.qty}</Text>
+                        <View className="bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded mr-2">
+                          <Text className="text-[10px] font-bold text-slate-800 dark:text-gray-300">QTY: {item.qty}</Text>
                         </View>
                         <Text className="text-[10px] font-medium text-slate-400">× Rs. {item.price.toFixed(2)}</Text>
                       </View>
                     </View>
                   </View>
-                  <Text className="font-black text-blue-900">
+                  <Text className="font-black text-blue-900 dark:text-blue-400">
                     Rs. {(item.price * item.qty).toFixed(2)}
                   </Text>
                 </View>
               ))}
             </View>
 
-            <View className="border-t border-slate-100 py-4 flex-row justify-between">
-              <Text className="text-slate-600 font-medium">Subtotal</Text>
-              <Text className="font-bold text-slate-900">Rs. {subtotal.toFixed(2)}</Text>
+            <View className="border-t border-slate-200 dark:border-gray-700 py-4 flex-row justify-between">
+              <Text className="text-slate-800 dark:text-gray-300 font-medium">Subtotal</Text>
+              <Text className="font-bold text-slate-800 dark:text-gray-300">Rs. {subtotal.toFixed(2)}</Text>
             </View>
 
-            <View className="border-t border-slate-100 py-4 flex-row justify-between items-center">
+            <View className="border-t border-slate-200 dark:border-gray-700 py-4 flex-row justify-between items-center">
               <View>
                 <Text className="text-emerald-600 font-medium flex-row items-center">
                   Shipping Charge <Text className="text-[9px] bg-emerald-100 px-1.5 py-0.5 rounded-full font-bold ml-1 uppercase">Flat Rate</Text>
@@ -493,42 +495,42 @@ export default function CheckoutScreen() {
               <Text className="font-bold text-emerald-600">Rs. {shippingCharge.toFixed(2)}</Text>
             </View>
 
-            <View className="border-t border-slate-100 py-4">
-              <Text className="mb-4 text-blue-900 font-bold uppercase text-[10px] tracking-widest">Select Payment Method</Text>
+            <View className="border-t border-slate-200 dark:border-gray-700 py-4">
+              <Text className="mb-4 text-blue-900 dark:text-blue-400 font-bold uppercase text-[10px] tracking-widest">Select Payment Method</Text>
               
               <TouchableOpacity 
-                className={`flex-row items-center p-4 rounded-xl border-2 mb-3 ${formData.paymentMethod === 'ONLINE' ? 'border-blue-600 bg-blue-50' : 'border-slate-50'}`}
+                className={`flex-row items-center p-4 rounded-xl border-2 mb-3 ${formData.paymentMethod === 'ONLINE' ? 'border-blue-600 bg-blue-50' : 'border-slate-50 dark:border-gray-700'}`}
                 onPress={() => handleInputChange('paymentMethod', 'ONLINE')}
               >
                 <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-4 ${formData.paymentMethod === 'ONLINE' ? 'border-blue-600' : 'border-slate-300'}`}>
                   {formData.paymentMethod === 'ONLINE' && <View className="w-2.5 h-2.5 bg-blue-600 rounded-full" />}
                 </View>
                 <View>
-                  <Text className="font-bold text-blue-900">Online Payment</Text>
-                  <Text className="text-[10px] text-slate-500 uppercase">Visa / Master / Koko / Mintpay</Text>
+                  <Text className="font-bold text-blue-900 dark:text-blue-400">Online Payment</Text>
+                  <Text className="text-[10px] text-slate-800 dark:text-gray-300 uppercase">Visa / Master / Koko / Mintpay</Text>
                 </View>
               </TouchableOpacity>
 
               <TouchableOpacity 
-                className={`flex-row items-center p-4 rounded-xl border-2 ${formData.paymentMethod === 'COD' ? 'border-blue-600 bg-blue-50' : 'border-slate-50'}`}
+                className={`flex-row items-center p-4 rounded-xl border-2 ${formData.paymentMethod === 'COD' ? 'border-blue-600 bg-blue-50' : 'border-slate-50 dark:border-gray-700'}`}
                 onPress={() => handleInputChange('paymentMethod', 'COD')}
               >
                 <View className={`w-5 h-5 rounded-full border-2 items-center justify-center mr-4 ${formData.paymentMethod === 'COD' ? 'border-blue-600' : 'border-slate-300'}`}>
                   {formData.paymentMethod === 'COD' && <View className="w-2.5 h-2.5 bg-blue-600 rounded-full" />}
                 </View>
                 <View>
-                  <Text className="font-bold text-blue-900">Cash on Delivery</Text>
-                  <Text className="text-[10px] text-slate-500 uppercase">Pay when you receive the order</Text>
+                  <Text className="font-bold text-blue-900 dark:text-blue-400">Cash on Delivery</Text>
+                  <Text className="text-[10px] text-slate-800 dark:text-gray-300 uppercase">Pay when you receive the order</Text>
                 </View>
               </TouchableOpacity>
             </View>
 
-            <View className="border-t border-slate-100 py-6 flex-row justify-between items-center">
-              <Text className="text-2xl font-black text-blue-900">Total</Text>
-              <Text className="text-2xl font-black text-blue-900">Rs. {totalAmount.toFixed(2)}</Text>
+            <View className="border-t border-slate-200 dark:border-gray-700 py-6 flex-row justify-between items-center">
+              <Text className="text-2xl font-black text-blue-900 dark:text-blue-400">Total</Text>
+              <Text className="text-2xl font-black text-blue-900 dark:text-blue-400">Rs. {totalAmount.toFixed(2)}</Text>
             </View>
 
-            <View className="border-t border-slate-100 py-4">
+            <View className="border-t border-slate-200 dark:border-gray-700 py-4">
               <TouchableOpacity 
                 className="flex-row items-center"
                 onPress={() => handleInputChange('agreeTerms', !formData.agreeTerms)}
@@ -536,7 +538,7 @@ export default function CheckoutScreen() {
                 <View className={`w-5 h-5 rounded mr-3 items-center justify-center border ${errors.agreeTerms ? 'border-red-500' : formData.agreeTerms ? 'border-blue-600 bg-blue-600' : 'border-slate-300'}`}>
                   {formData.agreeTerms && <Feather name="check" size={14} color="white" />}
                 </View>
-                <Text className="text-xs text-slate-600 flex-1">
+                <Text className="text-xs text-slate-800 dark:text-gray-300 flex-1">
                   I have read and agree to the website 
                   <Text onPress={() => setTermsModalVisible(true)} className="text-blue-600 font-bold ml-1"> terms and conditions *</Text>
                 </Text>
@@ -563,9 +565,9 @@ export default function CheckoutScreen() {
       {/* District Modal */}
       <Modal visible={districtModalVisible} animationType="slide" transparent={true}>
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl h-2/3">
-            <View className="p-4 border-b border-slate-100 flex-row justify-between items-center">
-              <Text className="font-black text-lg text-slate-900">Select District</Text>
+          <View className="bg-white dark:bg-gray-800 rounded-t-3xl h-2/3">
+            <View className="p-4 border-b border-slate-200 dark:border-gray-700 flex-row justify-between items-center">
+              <Text className="font-black text-lg text-slate-800 dark:text-gray-300">Select District</Text>
               <TouchableOpacity onPress={() => setDistrictModalVisible(false)} className="p-2">
                 <Feather name="x" size={24} color="#64748b" />
               </TouchableOpacity>
@@ -575,14 +577,14 @@ export default function CheckoutScreen() {
               keyExtractor={(item) => item}
               renderItem={({item}) => (
                 <TouchableOpacity 
-                  className="p-4 border-b border-slate-50"
+                  className="p-4 border-b border-slate-50 dark:border-gray-700"
                   onPress={() => {
                     handleInputChange('district', item);
                     handleInputChange('city', ''); // Reset city
                     setDistrictModalVisible(false);
                   }}
                 >
-                  <Text className={`font-medium ${formData.district === item ? 'text-blue-600' : 'text-slate-700'}`}>{item}</Text>
+                  <Text className={`font-medium ${formData.district === item ? 'text-blue-600' : 'text-slate-800 dark:text-gray-300'}`}>{item}</Text>
                 </TouchableOpacity>
               )}
             />
@@ -593,9 +595,9 @@ export default function CheckoutScreen() {
       {/* City Modal */}
       <Modal visible={cityModalVisible} animationType="slide" transparent={true}>
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl h-2/3">
-            <View className="p-4 border-b border-slate-100 flex-row justify-between items-center">
-              <Text className="font-black text-lg text-slate-900">Select City</Text>
+          <View className="bg-white dark:bg-gray-800 rounded-t-3xl h-2/3">
+            <View className="p-4 border-b border-slate-200 dark:border-gray-700 flex-row justify-between items-center">
+              <Text className="font-black text-lg text-slate-800 dark:text-gray-300">Select City</Text>
               <TouchableOpacity onPress={() => setCityModalVisible(false)} className="p-2">
                 <Feather name="x" size={24} color="#64748b" />
               </TouchableOpacity>
@@ -605,13 +607,13 @@ export default function CheckoutScreen() {
               keyExtractor={(item) => item}
               renderItem={({item}) => (
                 <TouchableOpacity 
-                  className="p-4 border-b border-slate-50"
+                  className="p-4 border-b border-slate-50 dark:border-gray-700"
                   onPress={() => {
                     handleInputChange('city', item);
                     setCityModalVisible(false);
                   }}
                 >
-                  <Text className={`font-medium ${formData.city === item ? 'text-blue-600' : 'text-slate-700'}`}>{item}</Text>
+                  <Text className={`font-medium ${formData.city === item ? 'text-blue-600' : 'text-slate-800 dark:text-gray-300'}`}>{item}</Text>
                 </TouchableOpacity>
               )}
             />
@@ -622,21 +624,21 @@ export default function CheckoutScreen() {
       {/* Terms Modal */}
       <Modal visible={termsModalVisible} animationType="fade" transparent={true}>
         <View className="flex-1 justify-center items-center bg-black/50 p-4">
-          <View className="bg-white rounded-3xl w-full max-h-[80%] overflow-hidden">
-            <View className="p-6 border-b border-slate-100 flex-row justify-between items-center">
-              <Text className="font-black text-xl text-slate-900">Terms & Conditions</Text>
-              <TouchableOpacity onPress={() => setTermsModalVisible(false)} className="p-2 bg-slate-100 rounded-full">
+          <View className="bg-white dark:bg-gray-800 rounded-3xl w-full max-h-[80%] overflow-hidden">
+            <View className="p-6 border-b border-slate-200 dark:border-gray-700 flex-row justify-between items-center">
+              <Text className="font-black text-xl text-slate-800 dark:text-gray-300">Terms & Conditions</Text>
+              <TouchableOpacity onPress={() => setTermsModalVisible(false)} className="p-2 bg-slate-100 dark:bg-gray-800 rounded-full">
                 <Feather name="x" size={20} color="#64748b" />
               </TouchableOpacity>
             </View>
             <ScrollView className="p-6">
-              <Text className="font-bold text-blue-900 mb-2">Order Confirmation</Text>
-              <Text className="text-slate-600 text-sm mb-6">By placing an order, you agree that all information provided is accurate. Prescription orders will only be processed after verification by our qualified pharmacists.</Text>
+              <Text className="font-bold text-blue-900 dark:text-blue-400 mb-2">Order Confirmation</Text>
+              <Text className="text-slate-800 dark:text-gray-300 text-sm mb-6">By placing an order, you agree that all information provided is accurate. Prescription orders will only be processed after verification by our qualified pharmacists.</Text>
               
-              <Text className="font-bold text-blue-900 mb-2">Return & Refund Policy</Text>
-              <Text className="text-slate-600 text-sm mb-6">Due to health and safety regulations, medicinal products cannot be returned once delivered unless they are damaged or incorrect. Shipping charges (Rs. 400) are non-refundable.</Text>
+              <Text className="font-bold text-blue-900 dark:text-blue-400 mb-2">Return & Refund Policy</Text>
+              <Text className="text-slate-800 dark:text-gray-300 text-sm mb-6">Due to health and safety regulations, medicinal products cannot be returned once delivered unless they are damaged or incorrect. Shipping charges (Rs. 400) are non-refundable.</Text>
             </ScrollView>
-            <View className="p-6 border-t border-slate-100">
+            <View className="p-6 border-t border-slate-200 dark:border-gray-700">
               <TouchableOpacity 
                 className="w-full py-4 bg-blue-600 rounded-xl items-center"
                 onPress={() => {

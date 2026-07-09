@@ -4,7 +4,11 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  User
+  User,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithCredential,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { 
   doc, 
@@ -162,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Google Login (Web)
   const loginWithGoogle = async () => {
     try {
-      const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       return handleGoogleUser(userCredential.user);
@@ -175,7 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Google Login (Mobile/Credential)
   const loginWithGoogleCredential = async (idToken: string) => {
     try {
-      const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+
       const credential = GoogleAuthProvider.credential(idToken);
       const userCredential = await signInWithCredential(auth, credential);
       return handleGoogleUser(userCredential.user);
@@ -244,7 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Password Reset
   const resetPassword = async (email: string) => {
     try {
-      const { sendPasswordResetEmail } = await import('firebase/auth');
+
       await sendPasswordResetEmail(auth, email);
       return { success: true };
     } catch (error: any) {

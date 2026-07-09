@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -10,6 +11,7 @@ import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'f
 export default function SupportChatScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colorScheme } = useColorScheme();
   
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
@@ -91,7 +93,7 @@ export default function SupportChatScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
+    <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
       {/* Header */}
       <View className="bg-[#0f2a5e] px-4 py-3 flex-row items-center shadow-md">
         <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
@@ -127,11 +129,11 @@ export default function SupportChatScreen() {
         >
           {messages.length === 0 && (
             <View className="flex-row justify-start mb-4">
-               <View className="w-7 h-7 bg-blue-100 rounded-full items-center justify-center mr-2 mt-1">
-                  <MaterialCommunityIcons name="doctor" color="#0f2a5e" size={16} />
+               <View className="w-7 h-7 bg-blue-100 dark:bg-blue-900/40 rounded-full items-center justify-center mr-2 mt-1">
+                  <MaterialCommunityIcons name="doctor" color={colorScheme === 'dark' ? '#bfdbfe' : '#0f2a5e'} size={16} />
                </View>
-               <View className="max-w-[80%] px-4 py-3 rounded-2xl bg-white border border-[#e5e7eb] rounded-bl-sm">
-                 <Text className="text-textPrimary text-sm leading-5">
+               <View className="max-w-[80%] px-4 py-3 rounded-2xl bg-white dark:bg-gray-800 border border-[#e5e7eb] dark:border-gray-700 rounded-bl-sm">
+                 <Text className="text-textPrimary dark:text-white text-sm leading-5">
                    Hello! I'm your pharmacist. How can I help you today?
                  </Text>
                </View>
@@ -144,8 +146,8 @@ export default function SupportChatScreen() {
               className={`flex-row mb-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'pharmacist' && (
-                <View className="w-7 h-7 bg-blue-100 rounded-full items-center justify-center mr-2 mt-1">
-                  <MaterialCommunityIcons name="doctor" color="#0f2a5e" size={16} />
+                <View className="w-7 h-7 bg-blue-100 dark:bg-blue-900/40 rounded-full items-center justify-center mr-2 mt-1">
+                  <MaterialCommunityIcons name="doctor" color={colorScheme === 'dark' ? '#bfdbfe' : '#0f2a5e'} size={16} />
                 </View>
               )}
               
@@ -153,11 +155,11 @@ export default function SupportChatScreen() {
                 className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                   msg.role === 'user' 
                     ? 'bg-[#1a87e1] rounded-br-sm' 
-                    : 'bg-white border border-[#e5e7eb] rounded-bl-sm'
+                    : 'bg-white dark:bg-gray-800 border border-[#e5e7eb] dark:border-gray-700 rounded-bl-sm'
                 }`}
               >
                 <Text 
-                  className={`${msg.role === 'user' ? 'text-white' : 'text-textPrimary'} text-sm leading-5`}
+                  className={`${msg.role === 'user' ? 'text-white' : 'text-textPrimary dark:text-white'} text-sm leading-5`}
                 >
                   {msg.text}
                 </Text>
@@ -172,12 +174,13 @@ export default function SupportChatScreen() {
           )}
         </ScrollView>
 
-        <View className="p-3 bg-white border-t border-[#e5e7eb] flex-row items-center">
+        <View className="p-3 bg-white dark:bg-gray-900 border-t border-[#e5e7eb] dark:border-gray-800 flex-row items-center">
           <TextInput 
             value={input}
             onChangeText={setInput}
             placeholder="Type your message..."
-            className="flex-1 bg-white rounded-xl px-4 py-2.5 border-2 border-[#e5e7eb] text-textPrimary mr-2"
+            placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+            className="flex-1 bg-white dark:bg-gray-800 rounded-xl px-4 py-2.5 border-2 border-[#e5e7eb] dark:border-gray-700 text-textPrimary dark:text-white mr-2"
             multiline
             maxLength={500}
             style={{ minHeight: 44, maxHeight: 100 }}

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ShoppingCart, Upload, ClipboardList, Clock, Sparkles, TrendingUp, Zap, Heart, CheckCircle, Lightbulb } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
-import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where, doc, updateDoc } from 'firebase/firestore';
 
 
 
@@ -19,7 +20,6 @@ const OrderCard = ({ order }: { order: any }) => {
 
   const handleReject = async () => {
     try {
-      const { doc, updateDoc } = await import('firebase/firestore');
       await updateDoc(doc(db, 'prescriptions', order.id), {
         status: 'Rejected',
         customerConfirmed: false
@@ -32,13 +32,13 @@ const OrderCard = ({ order }: { order: any }) => {
   };
 
   return (
-    <View className="bg-white rounded-2xl p-4 mb-4 border border-[#e5e7eb] shadow-sm">
+    <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 border border-[#e5e7eb] dark:border-gray-700 shadow-sm">
       <View className="flex-row justify-between items-start mb-3">
         <View>
-          <Text className="text-xs uppercase font-bold text-textMuted tracking-wider">
+          <Text className="text-xs uppercase font-bold text-textMuted dark:text-gray-400 tracking-wider">
             {order.type === 'prescription' ? 'PRESCRIPTION' : 'ORDER'} #{order.id?.slice(-6) || '---'}
           </Text>
-          <Text className="text-lg font-bold text-textPrimary mt-1">
+          <Text className="text-lg font-bold text-textPrimary dark:text-white mt-1">
             {order.type === 'prescription' ? 'Rx Request' : `${(order.items || order.types)?.length || 0} Items`}
           </Text>
         </View>
@@ -56,12 +56,12 @@ const OrderCard = ({ order }: { order: any }) => {
       </View>
       
       {order.type === 'prescription' && order.medications && order.medications.length > 0 && (
-        <View className="bg-slate-50 p-3 rounded-xl mb-3 border border-slate-200">
-          <Text className="text-xs font-bold text-slate-700 mb-2">Quoted Medications:</Text>
+        <View className="bg-slate-50 dark:bg-gray-800 p-3 rounded-xl mb-3 border border-slate-200 dark:border-gray-700">
+          <Text className="text-xs font-bold text-slate-800 dark:text-gray-300 mb-2">Quoted Medications:</Text>
           {order.medications.map((m: any, idx: number) => (
             <View key={idx} className="flex-row justify-between mb-1">
-              <Text className="text-xs text-slate-600">{m.name} <Text className="font-bold">x{m.qty}</Text></Text>
-              <Text className="text-xs font-bold text-slate-800">Rs. {(m.total || (m.qty * m.price)).toFixed(2)}</Text>
+              <Text className="text-xs text-slate-800 dark:text-gray-300">{m.name} <Text className="font-bold">x{m.qty}</Text></Text>
+              <Text className="text-xs font-bold text-slate-800 dark:text-gray-300">Rs. {(m.total || (m.qty * m.price)).toFixed(2)}</Text>
             </View>
           ))}
         </View>
@@ -69,13 +69,13 @@ const OrderCard = ({ order }: { order: any }) => {
 
       {order.type === 'regular' && (order.items || order.types) && (order.items || order.types).length > 0 && (
          <View className="mb-3">
-            <Text className="text-xs text-slate-600 mb-1" numberOfLines={1}>
+            <Text className="text-xs text-slate-800 dark:text-gray-300 mb-1" numberOfLines={1}>
               {(order.items || order.types).map((t: any) => t.productName || t.name).join(', ')}
             </Text>
          </View>
       )}
       
-      <View className="flex-row justify-between items-center pt-3 border-t border-slate-100">
+      <View className="flex-row justify-between items-center pt-3 border-t border-slate-200 dark:border-gray-700">
         <View>
           <Text className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-0.5">Total</Text>
           <Text className="text-sm font-black text-accent">Rs. {(order.totalPrice || order.totalAmount || order.total || 0).toLocaleString()}</Text>
@@ -94,7 +94,7 @@ const OrderCard = ({ order }: { order: any }) => {
         ) : (
           <Pressable 
             onPress={() => router.push({ pathname: '/order-details' as any, params: { orderData: JSON.stringify(order) } })} 
-            className="flex-row items-center bg-accentLight px-4 py-2 rounded-xl"
+            className="flex-row items-center bg-accentLight dark:bg-gray-800 px-4 py-2 rounded-xl"
           >
             <Text className="text-accent text-xs font-bold mr-1">View Details</Text>
             <Feather name="chevron-right" size={14} color="#1a87e1" />
@@ -108,6 +108,7 @@ const OrderCard = ({ order }: { order: any }) => {
 export default function OrdersScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colorScheme } = useColorScheme();
   
   const [orders, setOrders] = useState<any[]>([]);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
@@ -262,13 +263,13 @@ export default function OrdersScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
-      <View className="flex-row items-center justify-between p-4 border-b border-[#e5e7eb] bg-white">
+    <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
+      <View className="flex-row items-center justify-between p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <View className="flex-row items-center">
           <Pressable onPress={() => router.back()} style={{ marginRight: 16 }}>
-            <Feather name="arrow-left" size={24} color="#0f2a5e" />
+            <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#f1f5f9' : '#0f2a5e'} />
           </Pressable>
-          <Text className="text-xl font-bold text-textPrimary">My Orders</Text>
+          <Text className="text-xl font-bold text-textPrimary dark:text-white">My Orders</Text>
         </View>
         <Pressable onPress={() => router.push('/prescription')} style={{ backgroundColor: '#eff6ff', padding: 8, borderRadius: 9999 }}>
           <Upload size={18} color="#1a87e1" />
@@ -284,69 +285,69 @@ export default function OrdersScreen() {
           
           {/* SUMMARY GRID */}
           <View className="flex-row flex-wrap justify-between mb-6">
-            <View className="w-[48%] bg-white p-4 rounded-2xl border border-[#e5e7eb] shadow-sm mb-3">
-              <View className="w-10 h-10 bg-blue-50 rounded-xl items-center justify-center mb-2">
+            <View className="w-[48%] bg-white dark:bg-gray-800 p-4 rounded-2xl border border-[#e5e7eb] dark:border-gray-700 shadow-sm mb-3">
+              <View className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-xl items-center justify-center mb-2">
                 <ShoppingCart size={18} color="#2563eb" />
               </View>
-              <Text className="text-2xl font-black text-slate-900">{summary.totalOrders}</Text>
+              <Text className="text-2xl font-black text-slate-800 dark:text-gray-300">{summary.totalOrders}</Text>
               <Text className="text-[10px] font-bold uppercase text-slate-400 mt-1">Cart Orders</Text>
             </View>
-            <View className="w-[48%] bg-white p-4 rounded-2xl border border-[#e5e7eb] shadow-sm mb-3">
-              <View className="w-10 h-10 bg-purple-50 rounded-xl items-center justify-center mb-2">
+            <View className="w-[48%] bg-white dark:bg-gray-800 p-4 rounded-2xl border border-[#e5e7eb] dark:border-gray-700 shadow-sm mb-3">
+              <View className="w-10 h-10 bg-purple-50 dark:bg-purple-900/30 rounded-xl items-center justify-center mb-2">
                 <ClipboardList size={18} color="#7c3aed" />
               </View>
-              <Text className="text-2xl font-black text-slate-900">{summary.totalPrescriptions}</Text>
+              <Text className="text-2xl font-black text-slate-800 dark:text-gray-300">{summary.totalPrescriptions}</Text>
               <Text className="text-[10px] font-bold uppercase text-slate-400 mt-1">Prescriptions</Text>
             </View>
-            <View className="w-[48%] bg-white p-4 rounded-2xl border border-[#e5e7eb] shadow-sm">
-              <View className="w-10 h-10 bg-amber-50 rounded-xl items-center justify-center mb-2">
+            <View className="w-[48%] bg-white dark:bg-gray-800 p-4 rounded-2xl border border-[#e5e7eb] dark:border-gray-700 shadow-sm">
+              <View className="w-10 h-10 bg-amber-50 dark:bg-amber-900/30 rounded-xl items-center justify-center mb-2">
                 <Clock size={18} color="#d97706" />
               </View>
-              <Text className="text-2xl font-black text-slate-900">{summary.pendingPrescriptions}</Text>
+              <Text className="text-2xl font-black text-slate-800 dark:text-gray-300">{summary.pendingPrescriptions}</Text>
               <Text className="text-[10px] font-bold uppercase text-slate-400 mt-1">Pending Rx</Text>
             </View>
-            <View className="w-[48%] bg-white p-4 rounded-2xl border border-[#e5e7eb] shadow-sm">
-              <View className="w-10 h-10 bg-emerald-50 rounded-xl items-center justify-center mb-2">
+            <View className="w-[48%] bg-white dark:bg-gray-800 p-4 rounded-2xl border border-[#e5e7eb] dark:border-gray-700 shadow-sm">
+              <View className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl items-center justify-center mb-2">
                 <Zap size={18} color="#059669" />
               </View>
-              <Text className="text-2xl font-black text-slate-900">{summary.activeOrders}</Text>
+              <Text className="text-2xl font-black text-slate-800 dark:text-gray-300">{summary.activeOrders}</Text>
               <Text className="text-[10px] font-bold uppercase text-slate-400 mt-1">In Progress</Text>
             </View>
           </View>
 
           {/* AI INSIGHTS */}
-          <View className="bg-[#eff6ff] border border-[#bfdbfe] rounded-3xl p-5 mb-6">
+          <View className="bg-[#eff6ff] dark:bg-blue-900/20 border border-[#bfdbfe] dark:border-blue-800/30 rounded-3xl p-5 mb-6">
             <View className="flex-row items-center mb-4">
-              <View className="w-8 h-8 bg-blue-100 rounded-xl items-center justify-center mr-3">
+              <View className="w-8 h-8 bg-blue-100 dark:bg-blue-900/50 rounded-xl items-center justify-center mr-3">
                 <Sparkles size={16} color="#2563eb" />
               </View>
               <View>
                 <Text className="text-[10px] uppercase font-bold text-blue-500 tracking-widest">AI Powered</Text>
-                <Text className="text-lg font-bold text-slate-900">Order Intelligence</Text>
+                <Text className="text-lg font-bold text-slate-800 dark:text-gray-300">Order Intelligence</Text>
               </View>
             </View>
             <View className="flex-row flex-wrap justify-between">
-              <View className="w-[48%] bg-white rounded-xl p-3 mb-2 shadow-sm border border-[#e2e8f0]">
+              <View className="w-[48%] bg-white dark:bg-gray-800 rounded-xl p-3 mb-2 shadow-sm border border-[#e2e8f0]">
                 <Text className="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Spent</Text>
-                <Text className="text-base font-black text-slate-900">Rs. {summary.totalSpending.toLocaleString()}</Text>
+                <Text className="text-base font-black text-slate-800 dark:text-gray-300">Rs. {summary.totalSpending.toLocaleString()}</Text>
               </View>
-              <View className="w-[48%] bg-white rounded-xl p-3 mb-2 shadow-sm border border-[#e2e8f0]">
+              <View className="w-[48%] bg-white dark:bg-gray-800 rounded-xl p-3 mb-2 shadow-sm border border-[#e2e8f0]">
                 <Text className="text-[10px] uppercase font-bold text-slate-400 mb-1">Avg Order</Text>
-                <Text className="text-base font-black text-slate-900">Rs. {summary.avgOrderValue.toLocaleString()}</Text>
+                <Text className="text-base font-black text-slate-800 dark:text-gray-300">Rs. {summary.avgOrderValue.toLocaleString()}</Text>
               </View>
-              <View className="w-[48%] bg-white rounded-xl p-3 shadow-sm border border-[#e2e8f0]">
+              <View className="w-[48%] bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-[#e2e8f0]">
                 <Text className="text-[10px] uppercase font-bold text-slate-400 mb-1">Frequency</Text>
-                <Text className="text-sm font-black text-slate-900">{summary.orderFrequency}</Text>
+                <Text className="text-sm font-black text-slate-800 dark:text-gray-300">{summary.orderFrequency}</Text>
               </View>
-              <View className="w-[48%] bg-white rounded-xl p-3 shadow-sm border border-[#e2e8f0]">
+              <View className="w-[48%] bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-[#e2e8f0]">
                 <Text className="text-[10px] uppercase font-bold text-slate-400 mb-1">Delivery ETA</Text>
-                <Text className="text-sm font-black text-slate-900">{summary.deliveryPrediction}</Text>
+                <Text className="text-sm font-black text-slate-800 dark:text-gray-300">{summary.deliveryPrediction}</Text>
               </View>
             </View>
           </View>
 
           {/* TABS */}
-          <View className="bg-slate-100 p-1 rounded-xl flex-row mb-6">
+          <View className="bg-slate-100 dark:bg-gray-800 p-1 rounded-xl flex-row mb-6">
             <Pressable 
               style={{ flex: 1, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: activeTab === 'orders' ? '#ffffff' : 'transparent', shadowColor: activeTab === 'orders' ? '#000' : 'transparent', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 1, elevation: activeTab === 'orders' ? 1 : 0 }}
               onPress={() => setActiveTab('orders')}
@@ -364,11 +365,11 @@ export default function OrdersScreen() {
           {/* LIST */}
           <View>
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="font-bold text-lg text-slate-900">
+              <Text className="font-bold text-lg text-slate-800 dark:text-gray-300">
                 {activeTab === 'orders' ? 'Your latest orders' : 'Prescription history'}
               </Text>
-              <View className="bg-slate-100 px-3 py-1 rounded-full">
-                <Text className="text-[10px] uppercase font-bold text-slate-500">
+              <View className="bg-slate-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                <Text className="text-[10px] uppercase font-bold text-slate-800 dark:text-gray-300">
                   {activeTab === 'orders' ? `${visibleOrders.length} items` : `${prescriptions.length} submitted`}
                 </Text>
               </View>
@@ -378,9 +379,9 @@ export default function OrdersScreen() {
               visibleOrders.length > 0 ? (
                 visibleOrders.map((order) => <OrderCard key={order.id} order={order} />)
               ) : (
-                <View className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 items-center">
+                <View className="bg-slate-50 dark:bg-gray-800 border border-dashed border-slate-200 dark:border-gray-700 rounded-2xl p-8 items-center">
                   <ShoppingCart size={32} color="#cbd5e1" className="mb-3" />
-                  <Text className="font-bold text-slate-600">No cart orders yet</Text>
+                  <Text className="font-bold text-slate-800 dark:text-gray-300">No cart orders yet</Text>
                   <Text className="text-xs text-slate-400 mt-1">Place a new order and it will appear here.</Text>
                 </View>
               )
@@ -388,9 +389,9 @@ export default function OrdersScreen() {
               prescriptions.length > 0 ? (
                 prescriptions.map((order) => <OrderCard key={order.id} order={order} />)
               ) : (
-                <View className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 items-center">
+                <View className="bg-slate-50 dark:bg-gray-800 border border-dashed border-slate-200 dark:border-gray-700 rounded-2xl p-8 items-center">
                   <ClipboardList size={32} color="#cbd5e1" className="mb-3" />
-                  <Text className="font-bold text-slate-600">No prescriptions submitted</Text>
+                  <Text className="font-bold text-slate-800 dark:text-gray-300">No prescriptions submitted</Text>
                   <Text className="text-xs text-slate-400 mt-1">Upload a prescription to track it here.</Text>
                 </View>
               )

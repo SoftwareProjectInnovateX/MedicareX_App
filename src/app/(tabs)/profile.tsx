@@ -36,10 +36,10 @@ export default function ProfileScreen() {
       const { collection, query, where } = require('firebase/firestore');
       
       const qOrders = query(collection(db, 'CustomerOrders'), where('userId', '==', user.uid));
-      const unsubOrders = onSnapshot(qOrders, (snap) => setOrdersCount(snap.size));
+      const unsubOrders = onSnapshot(qOrders, (snap: any) => setOrdersCount(snap.size));
       
       const qPres = query(collection(db, 'prescriptions'), where('userId', '==', user.uid));
-      const unsubPres = onSnapshot(qPres, (snap) => setPrescriptionsCount(snap.size));
+      const unsubPres = onSnapshot(qPres, (snap: any) => setPrescriptionsCount(snap.size));
       
       return () => {
         unsubUser();
@@ -51,12 +51,12 @@ export default function ProfileScreen() {
 
   if (!user) {
     return (
-      <View className="flex-1 bg-primary items-center justify-center px-6">
-        <View className="w-24 h-24 bg-accentLight rounded-full items-center justify-center mb-6">
+      <View className="flex-1 bg-primary dark:bg-gray-900 items-center justify-center px-6">
+        <View className="w-24 h-24 bg-accentLight dark:bg-gray-800 rounded-full items-center justify-center mb-6">
           <Feather name="user" color="#1a87e1" size={40} />
         </View>
-        <Text className="text-2xl font-bold text-textPrimary mb-2">Guest Profile</Text>
-        <Text className="text-textSecondary text-center mb-8">Sign in to track orders, save prescriptions, and manage your health.</Text>
+        <Text className="text-2xl font-bold text-textPrimary dark:text-white mb-2">Guest Profile</Text>
+        <Text className="text-textSecondary dark:text-gray-300 text-center mb-8">Sign in to track orders, save prescriptions, and manage your health.</Text>
         <TouchableOpacity 
           className="bg-accent w-full py-4 rounded-2xl items-center"
           onPress={() => router.push('/(auth)/login')}
@@ -140,12 +140,12 @@ export default function ProfileScreen() {
   const displayPhoto = userData?.photoURL || user.photoURL;
 
   return (
-    <View className="flex-1 bg-primary">
-      <ScrollView className="flex-1 bg-primary" showsVerticalScrollIndicator={false}>
+    <View className="flex-1 bg-primary dark:bg-gray-900">
+      <ScrollView className="flex-1 bg-primary dark:bg-gray-900" showsVerticalScrollIndicator={false}>
         {/* Header Profile Section */}
         <View className="bg-accent px-6 pt-16 pb-8 rounded-b-[40px] shadow-sm">
           <View className="flex-row items-center">
-            <View className="w-20 h-20 bg-white rounded-full items-center justify-center border-4 border-accent overflow-hidden shadow-md">
+            <View className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full items-center justify-center border-4 border-accent overflow-hidden shadow-md">
               {displayPhoto ? (
                 <Image source={{ uri: displayPhoto }} className="w-full h-full" resizeMode="cover" />
               ) : (
@@ -168,33 +168,33 @@ export default function ProfileScreen() {
 
         {/* Stats/Quick Info */}
         <View className="flex-row justify-between px-6 mt-[-20px] mb-6">
-          <View className="bg-white rounded-2xl p-4 flex-1 mr-2 shadow-sm items-center border border-[#e5e7eb]">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex-1 mr-2 shadow-sm items-center border border-[#e5e7eb] dark:border-gray-700">
             <Text className="text-accent font-bold text-2xl mb-1">{ordersCount}</Text>
-            <Text className="text-textSecondary text-xs font-medium">Orders</Text>
+            <Text className="text-textSecondary dark:text-gray-300 text-xs font-medium">Orders</Text>
           </View>
-          <View className="bg-white rounded-2xl p-4 flex-1 ml-2 shadow-sm items-center border border-[#e5e7eb]">
+          <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex-1 ml-2 shadow-sm items-center border border-[#e5e7eb] dark:border-gray-700">
             <Text className="text-accent font-bold text-2xl mb-1">{prescriptionsCount}</Text>
-            <Text className="text-textSecondary text-xs font-medium">Prescriptions</Text>
+            <Text className="text-textSecondary dark:text-gray-300 text-xs font-medium">Prescriptions</Text>
           </View>
         </View>
 
         {/* Menu Options */}
         <View className="px-6 pb-8">
-          <Text className="text-lg font-bold text-textPrimary mb-4">Account Overview</Text>
+          <Text className="text-lg font-bold text-textPrimary dark:text-white mb-4">Account Overview</Text>
           
-          <View className="bg-white rounded-3xl shadow-sm border border-[#e5e7eb] overflow-hidden">
+          <View className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-[#e5e7eb] dark:border-gray-700 overflow-hidden">
             {menuItems.map((item, index) => (
               <TouchableOpacity 
                 key={index}
-                className={`flex-row items-center p-4 ${index !== menuItems.length - 1 ? 'border-b border-[#e5e7eb]' : ''}`}
+                className={`flex-row items-center p-4 ${index !== menuItems.length - 1 ? 'border-b border-[#e5e7eb] dark:border-gray-700' : ''}`}
                 onPress={() => item.route && router.push(item.route as any)}
               >
-                <View className="w-12 h-12 bg-primary rounded-xl items-center justify-center mr-4">
+                <View className="w-12 h-12 bg-primary dark:bg-gray-900 rounded-xl items-center justify-center mr-4">
                   {item.icon}
                 </View>
                 <View className="flex-1">
-                  <Text className="font-bold text-textPrimary text-base">{item.title}</Text>
-                  <Text className="text-textSecondary text-xs mt-0.5">{item.subtitle}</Text>
+                  <Text className="font-bold text-textPrimary dark:text-white text-base">{item.title}</Text>
+                  <Text className="text-textSecondary dark:text-gray-300 text-xs mt-0.5">{item.subtitle}</Text>
                 </View>
                 <Feather name="chevron-right" color="#CBD5E1" size={24} />
               </TouchableOpacity>
@@ -214,10 +214,10 @@ export default function ProfileScreen() {
       {/* Edit Profile Modal */}
       <Modal visible={showEditModal} transparent animationType="slide">
         <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl p-6 h-[75%]">
+          <View className="bg-white dark:bg-gray-800 rounded-t-3xl p-6 h-[75%]">
             <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-xl font-black text-textPrimary">Edit Profile</Text>
-              <TouchableOpacity onPress={() => setShowEditModal(false)} className="w-8 h-8 bg-slate-100 rounded-full items-center justify-center">
+              <Text className="text-xl font-black text-textPrimary dark:text-white">Edit Profile</Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)} className="w-8 h-8 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center">
                 <Feather name="x" size={20} color="#64748B" />
               </TouchableOpacity>
             </View>
@@ -226,7 +226,7 @@ export default function ProfileScreen() {
               {/* Profile Image Picker */}
               <View className="items-center mb-8 mt-2">
                 <View className="relative">
-                  <View className="w-28 h-28 bg-slate-100 rounded-full items-center justify-center border-4 border-primary overflow-hidden shadow-sm">
+                  <View className="w-28 h-28 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center border-4 border-primary overflow-hidden shadow-sm">
                     {displayPhoto ? (
                       <Image source={{ uri: displayPhoto }} className="w-full h-full" resizeMode="cover" />
                     ) : (
@@ -245,14 +245,14 @@ export default function ProfileScreen() {
                     )}
                   </TouchableOpacity>
                 </View>
-                <Text className="text-textSecondary text-xs mt-3 font-semibold">Tap camera to change photo</Text>
+                <Text className="text-textSecondary dark:text-gray-300 text-xs mt-3 font-semibold">Tap camera to change photo</Text>
               </View>
 
               {/* Name Input */}
               <View className="mb-4">
-                <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Full Name</Text>
+                <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Full Name</Text>
                 <TextInput 
-                  className="bg-primary rounded-xl px-4 py-3.5 text-textPrimary font-bold border border-[#e5e7eb] text-base"
+                  className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3.5 text-textPrimary dark:text-white font-bold border border-[#e5e7eb] dark:border-gray-700 text-base"
                   value={editName}
                   onChangeText={setEditName}
                   placeholder="Enter your full name"
@@ -261,11 +261,11 @@ export default function ProfileScreen() {
 
               {/* Email (Read Only) */}
               <View className="mb-8">
-                <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Email Address</Text>
-                <View className="bg-slate-50 rounded-xl px-4 py-3.5 border border-[#e5e7eb]">
-                  <Text className="text-textSecondary font-bold text-base">{user.email}</Text>
+                <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Email Address</Text>
+                <View className="bg-slate-50 dark:bg-gray-800 rounded-xl px-4 py-3.5 border border-[#e5e7eb] dark:border-gray-700">
+                  <Text className="text-textSecondary dark:text-gray-300 font-bold text-base">{user.email}</Text>
                 </View>
-                <Text className="text-xs text-textSecondary mt-2">Email addresses cannot be changed here. Visit settings for account management.</Text>
+                <Text className="text-xs text-textSecondary dark:text-gray-300 mt-2">Email addresses cannot be changed here. Visit settings for account management.</Text>
               </View>
 
               {/* Save Button */}

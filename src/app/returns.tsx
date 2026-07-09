@@ -77,43 +77,43 @@ export default function ReturnsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-primary">
-      <View className="px-6 pt-14 pb-4 bg-white border-b border-[#e5e7eb] flex-row justify-between items-center shadow-sm z-10">
-        <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-slate-100 rounded-full items-center justify-center">
+    <View className="flex-1 bg-primary dark:bg-gray-900">
+      <View className="px-6 pt-14 pb-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700 flex-row justify-between items-center shadow-sm z-10">
+        <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center">
           <Feather name="arrow-left" color="#1E293B" size={20} />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-textPrimary">Returns</Text>
+        <Text className="text-xl font-bold text-textPrimary dark:text-white">Returns</Text>
         <View className="w-10" />
       </View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
-          <Text className="text-2xl font-black text-textPrimary mb-2">Initiate a Return</Text>
-          <Text className="text-textSecondary text-sm mb-6">Enter your order details below to request a return or refund for delivered items.</Text>
+          <Text className="text-2xl font-black text-textPrimary dark:text-white mb-2">Initiate a Return</Text>
+          <Text className="text-textSecondary dark:text-gray-300 text-sm mb-6">Enter your order details below to request a return or refund for delivered items.</Text>
           
-          <View className="bg-white p-5 rounded-2xl shadow-sm border border-[#e5e7eb] mb-6">
+          <View className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-[#e5e7eb] dark:border-gray-700 mb-6">
             <View className="mb-4">
-              <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Order ID *</Text>
+              <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Order ID *</Text>
               <TextInput 
-                className="bg-primary rounded-xl px-4 py-3 text-textPrimary font-bold border border-[#e5e7eb]"
+                className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 text-textPrimary dark:text-white font-bold border border-[#e5e7eb] dark:border-gray-700"
                 placeholder="e.g., ORD-12345"
                 value={orderId}
                 onChangeText={setOrderId}
               />
             </View>
             <View className="mb-4">
-              <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Reason for Return *</Text>
+              <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Reason for Return *</Text>
               <TouchableOpacity 
-                className="bg-primary rounded-xl px-4 py-3 border border-[#e5e7eb] flex-row justify-between items-center"
+                className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 border border-[#e5e7eb] dark:border-gray-700 flex-row justify-between items-center"
                 onPress={() => setShowPicker(true)}
               >
-                <Text className="text-textPrimary font-bold">{reason}</Text>
+                <Text className="text-textPrimary dark:text-white font-bold">{reason}</Text>
                 <Feather name="chevron-down" color="#64748b" size={18} />
               </TouchableOpacity>
             </View>
             <View className="mb-2">
-              <Text className="text-[10px] font-black text-textSecondary uppercase tracking-widest mb-1.5">Additional Notes</Text>
+              <Text className="text-[10px] font-black text-textSecondary dark:text-gray-300 uppercase tracking-widest mb-1.5">Additional Notes</Text>
               <TextInput 
-                className="bg-primary rounded-xl px-4 py-3 text-textPrimary font-bold border border-[#e5e7eb] h-24"
+                className="bg-primary dark:bg-gray-900 rounded-xl px-4 py-3 text-textPrimary dark:text-white font-bold border border-[#e5e7eb] dark:border-gray-700 h-24"
                 placeholder="Provide any additional details..."
                 multiline
                 textAlignVertical="top"
@@ -135,11 +135,11 @@ export default function ReturnsScreen() {
           {/* My Returns Section */}
           {myReturns.length > 0 && (
             <View className="mb-10">
-              <Text className="text-lg font-black text-textPrimary mb-4">My Returns</Text>
+              <Text className="text-lg font-black text-textPrimary dark:text-white mb-4">My Returns</Text>
               {myReturns.map(ret => (
-                <View key={ret.id} className="bg-white p-4 rounded-xl border border-[#e5e7eb] mb-3">
+                <View key={ret.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-[#e5e7eb] dark:border-gray-700 mb-3">
                   <View className="flex-row justify-between items-center mb-2">
-                    <Text className="font-bold text-textPrimary">Order ID: {ret.orderId}</Text>
+                    <Text className="font-bold text-textPrimary dark:text-white">Order ID: {ret.orderId}</Text>
                     {ret.returnStatus === 'approved' ? (
                       <View className="bg-emerald-100 px-2 py-1 rounded-md">
                         <Text className="text-[10px] font-bold text-emerald-700 uppercase">Return Successful</Text>
@@ -154,7 +154,7 @@ export default function ReturnsScreen() {
                       </View>
                     )}
                   </View>
-                  <Text className="text-xs text-textSecondary">
+                  <Text className="text-xs text-textSecondary dark:text-gray-300">
                     Reason: {ret.items?.[0]?.reason || 'N/A'}
                   </Text>
                   {ret.returnStatus === 'approved' && (
@@ -172,25 +172,25 @@ export default function ReturnsScreen() {
       {/* Custom Picker Modal */}
       <Modal visible={showPicker} transparent animationType="fade">
         <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl p-6">
-            <Text className="text-lg font-black text-textPrimary mb-4">Select Reason</Text>
+          <View className="bg-white dark:bg-gray-800 rounded-t-3xl p-6">
+            <Text className="text-lg font-black text-textPrimary dark:text-white mb-4">Select Reason</Text>
             {RETURN_REASONS.map(r => (
               <TouchableOpacity 
                 key={r} 
-                className="py-4 border-b border-[#e5e7eb]"
+                className="py-4 border-b border-[#e5e7eb] dark:border-gray-700"
                 onPress={() => {
                   setReason(r);
                   setShowPicker(false);
                 }}
               >
-                <Text className={`text-base ${reason === r ? 'text-accent font-bold' : 'text-textPrimary'}`}>{r}</Text>
+                <Text className={`text-base ${reason === r ? 'text-accent font-bold' : 'text-textPrimary dark:text-white'}`}>{r}</Text>
               </TouchableOpacity>
             ))}
             <TouchableOpacity 
-              className="mt-6 bg-slate-100 rounded-xl py-3 items-center"
+              className="mt-6 bg-slate-100 dark:bg-gray-800 rounded-xl py-3 items-center"
               onPress={() => setShowPicker(false)}
             >
-              <Text className="font-bold text-textSecondary">Cancel</Text>
+              <Text className="font-bold text-textSecondary dark:text-gray-300">Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ImageBackground, ActivityIndicator, Image, Animated, Easing } from 'react-native';
+import { View, Text, TouchableOpacity, ImageBackground, ActivityIndicator, Image, Animated } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { Feather } from '@expo/vector-icons';
@@ -10,8 +10,14 @@ export default function Index() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [showSplash, setShowSplash] = useState(true);
+  
+  // Splash animations
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
+  
+  // Content entrance animations
+  const contentFadeAnim = React.useRef(new Animated.Value(0)).current;
+  const contentSlideAnim = React.useRef(new Animated.Value(40)).current;
 
   useEffect(() => {
     // Animate splash
@@ -28,9 +34,24 @@ export default function Index() {
       }),
     ]).start();
 
-    // Hide splash after 2.5 seconds
+    // Hide splash after 2.5 seconds and trigger entrance animation
     const timer = setTimeout(() => {
       setShowSplash(false);
+      
+      Animated.parallel([
+        Animated.timing(contentFadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.spring(contentSlideAnim, {
+          toValue: 0,
+          friction: 6,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
     }, 2500);
 
     return () => clearTimeout(timer);
@@ -66,39 +87,88 @@ export default function Index() {
     );
   }
 
-  // If already logged in, skip the welcome screen
   if (user) {
     return <Redirect href="/(tabs)" />;
   }
 
   return (
     <ImageBackground 
-      source={require('../../assets/images/welcome_bg.png')} 
+      source={require('../../assets/images/modern_welcome_bg.png')} 
       className="flex-1 w-full h-full"
       resizeMode="cover"
     >
-      <SafeAreaView className="flex-1 justify-center px-8">
-        <View className="mt-[-100px]">
-          <View className="self-start mb-6">
-            <Text className="text-5xl font-extrabold text-black tracking-tight">MediCareX</Text>
-            <View className="h-1 bg-black w-[110%] mt-2" />
-          </View>
-          
-          <Text className="text-xl font-bold text-black leading-tight pr-8">
-            Order medicines safely, quickly, and at your doorstep.
-          </Text>
-        </View>
+      <LinearGradient
+        colors={['transparent', 'rgba(255,255,255,0.7)', 'rgba(255,255,255,1)']}
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '70%' }}
+      />
 
-        {/* Start Button at bottom */}
-        <View className="absolute bottom-16 left-8 right-8 items-center">
+      <SafeAreaView className="flex-1 justify-between px-6 pb-12 pt-8">
+        
+        <Animated.View 
+          style={{ 
+            alignItems: 'center', 
+            marginTop: 40,
+            opacity: contentFadeAnim,
+            transform: [{ translateY: contentSlideAnim }]
+          }}
+        >
+          {/* Properly cropped circular logo */}
+          <View 
+            className="bg-white shadow-2xl mb-5 items-center justify-center" 
+            style={{ 
+              width: 140, 
+              height: 140, 
+              borderRadius: 70, 
+              overflow: 'hidden',
+              elevation: 10,
+              borderWidth: 4,
+              borderColor: 'rgba(255,255,255,0.8)'
+            }}
+          >
+            <Image 
+              source={require('../../assets/images/logo.png')} 
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+            />
+          </View>
+          <Text className="text-[42px] font-extrabold text-[#0f2a5e] tracking-tight shadow-sm">MediCareX</Text>
+          <Text className="text-[#1a87e1] font-bold mt-1 tracking-widest uppercase text-[12px]">Your Health Partner</Text>
+        </Animated.View>
+
+        <Animated.View 
+          style={{ 
+            alignItems: 'center', 
+            marginBottom: 24,
+            opacity: contentFadeAnim,
+            transform: [{ translateY: contentSlideAnim }]
+          }}
+        >
+          <Text className="text-[28px] font-black text-center text-gray-900 mb-4 px-2 leading-8">
+            Pharmacy at your fingertips
+          </Text>
+          <Text className="text-[16px] text-center text-gray-600 mb-10 px-6 font-medium leading-6">
+            Order medicines safely, quickly, and get them delivered right to your doorstep.
+          </Text>
+
           <TouchableOpacity 
-            className="w-full max-w-[280px] bg-black rounded-[30px] h-16 flex-row items-center justify-center shadow-lg"
+            className="w-full max-w-[340px] shadow-xl elevation-5"
+            activeOpacity={0.8}
             onPress={() => router.push('/(auth)/login')}
           >
-            <Text className="text-white text-2xl font-bold mr-4">Start</Text>
-            <Feather name="chevron-right" size={24} color="white" />
+            <LinearGradient
+              colors={['#1a87e1', '#0ea5e9']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ borderRadius: 100, paddingVertical: 18 }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Text className="text-white text-[22px] font-extrabold mr-3 tracking-wide">Get Started</Text>
+                <Feather name="arrow-right" size={24} color="white" />
+              </View>
+            </LinearGradient>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
+
       </SafeAreaView>
     </ImageBackground>
   );

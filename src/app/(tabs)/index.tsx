@@ -5,6 +5,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Constants from 'expo-constants';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
@@ -61,6 +62,10 @@ export default function HomeScreen() {
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [productRatings, setProductRatings] = useState<Record<string, {avg: number, count: number}>>({});
+  
+  // Blog State
+  const [blogPosts, setBlogPosts] = useState<any[]>([]);
+  const [loadingBlogs, setLoadingBlogs] = useState(true);
   const { address } = useLocationStore();
   const { colorScheme, toggleColorScheme } = useColorScheme();
   
@@ -89,14 +94,72 @@ export default function HomeScreen() {
     }
   }).current;
 
+  // Blog Carousel Logic
+  const [activeBlogIndex, setActiveBlogIndex] = useState(0);
+  const flatListBlogRef = useRef<FlatList>(null);
   
-  // Helper for physical device & emulator localhost image resolution
+  useEffect(() => {
+    if (blogPosts.length === 0) return;
+    const timer = setInterval(() => {
+      let nextIndex = activeBlogIndex + 1;
+      const maxItems = Math.min(blogPosts.length, 3);
+      if (nextIndex >= maxItems) {
+        nextIndex = 0;
+      }
+      flatListBlogRef.current?.scrollToIndex({
+        index: nextIndex,
+        animated: true,
+      });
+    }, 5000); // 5 seconds
+
+    return () => clearInterval(timer);
+  }, [activeBlogIndex, blogPosts]);
+
+  const blogViewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
+  const onBlogViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+      setActiveBlogIndex(viewableItems[0].index);
+    }
+  }).current;
+
+  
+  // Dynamic host IP detection
+  const getHostIp = () => {
+    if (Platform.OS === 'web') return 'localhost';
+    let ip = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+    if (Constants?.expoConfig?.hostUri) {
+      ip = Constants.expoConfig.hostUri.split(':')[0];
+    } else if ((Constants as any)?.manifest?.hostUri) {
+      ip = (Constants as any).manifest.hostUri.split(':')[0];
+    } else if ((Constants as any)?.manifest2?.extra?.expoGo?.hostUri) {
+      ip = (Constants as any).manifest2.extra.expoGo.hostUri.split(':')[0];
+    }
+    return ip;
+  };
+
   const formatImageUrl = (url?: string) => {
     if (!url) return undefined;
-    // Android emulator needs 10.0.2.2 to access host's localhost, physical devices need LAN IP
-    const hostIp = Platform.OS === 'android' ? '10.0.2.2' : '10.207.127.9';
+    const hostIp = getHostIp();
     return url.replace('localhost', hostIp).replace('127.0.0.1', hostIp);
   };
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const hostIp = getHostIp();
+        const response = await fetch(`http://${hostIp}:5000/api/customer/blogs/latest`);
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        const data = await response.json();
+        setBlogPosts(Array.isArray(data) ? data : []);
+      } catch (error: any) {
+        console.error("Error fetching blogs:", error.message);
+        setBlogPosts([]);
+      } finally {
+        setLoadingBlogs(false);
+      }
+    };
+    fetchBlogs();
+  }, []);
   
   const cartItems = useCartStore(state => state.items);
   const cartCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
@@ -467,6 +530,141 @@ export default function HomeScreen() {
               </View>
 
             )}
+          </View>
+        </View>
+
+        {/* AI Generated Blogs Section - WHO Guidelines Compliant */}
+        <View className="px-4 py-8 bg-white dark:bg-gray-800 rounded-t-3xl mt-2 mb-4 shadow-sm border-t border-[#e5e7eb] dark:border-gray-700">
+          <Text className="text-2xl font-bold text-center mb-6 text-textPrimary dark:text-white tracking-tight">
+            Latest Health Insights
+          </Text>
+          
+          {loadingBlogs ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2">
+              {[1, 2, 3].map((item) => (
+                <View key={item} style={{ width: width - 32 }} className="bg-primary dark:bg-gray-900 rounded-[20px] shadow-sm border border-[#e5e7eb] dark:border-gray-700 overflow-hidden flex-col">
+                  <View className="h-44 bg-gray-200 dark:bg-gray-800" />
+                  <View className="p-5 flex-1 justify-between">
+                    <View>
+                      <View className="h-2.5 bg-gray-200 dark:bg-gray-800 rounded w-1/3 mb-4" />
+                      <View className="h-5 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-3" />
+                      <View className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-full mb-2" />
+                      <View className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-5/6 mb-2" />
+                      <View className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-4/6" />
+                    </View>
+                    <View className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4 flex-row justify-between">
+                      <View className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-1/3" />
+                      <View className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-1/6" />
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          ) : blogPosts.length > 0 ? (
+            <View className="mb-2">
+              <FlatList
+                ref={flatListBlogRef}
+                data={blogPosts.slice(0, 3)}
+                keyExtractor={(item) => item.id}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={width - 32}
+                decelerationRate="fast"
+                onViewableItemsChanged={onBlogViewableItemsChanged}
+                viewabilityConfig={blogViewabilityConfig}
+                renderItem={({ item: blog, index }) => {
+                  const title = blog.title ? blog.title.replace(/\*\*/g, '') : "MediCareX Health Tip";
+                  let excerpt = blog.content || '';
+                  excerpt = excerpt
+                    .replace(/^#+\s+.*/gm, '') 
+                    .replace(/Title:.*/gi, '') 
+                    .replace(title, '')
+                    .replace(/={3,}/g, '')
+                    .replace(/-{3,}/g, '')
+                    .replace(/[*_~`>]/g, '')   
+                    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') 
+                    .replace(/\n+/g, ' ')
+                    .trim();
+                    
+                  const dateStr = blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : "Just now";
+                  const fallbackImg = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80";
+                  
+                  return (
+                    <View style={{ width: width - 32 }}>
+                      <TouchableOpacity 
+                        className="w-full bg-primary dark:bg-gray-900 rounded-[20px] shadow-sm border border-[#e5e7eb] dark:border-gray-700 overflow-hidden flex-col"
+                        onPress={() => router.push(`/blog/${blog.id}` as any)}
+                      >
+                        <View className="h-44 bg-gray-200 relative">
+                          <Image 
+                            source={{ uri: formatImageUrl(blog.imageUrl) || formatImageUrl(blog.fallbackImageUrl) || fallbackImg }} 
+                            className="w-full h-full"
+                            resizeMode="cover"
+                          />
+                          <View className="absolute top-3 left-3 bg-blue-600/90 rounded-full px-3 py-1">
+                            <Text className="text-white text-[10px] font-bold uppercase tracking-widest">Health Insight</Text>
+                          </View>
+                          {index === 0 && (
+                            <View className="absolute top-3 right-3 bg-red-500 rounded-full px-3 py-1 flex-row items-center shadow-sm border border-red-400">
+                              <Feather name="zap" size={10} color="white" className="mr-1" />
+                              <Text className="text-white text-[10px] font-black uppercase tracking-widest">NEW</Text>
+                            </View>
+                          )}
+                        </View>
+                        
+                        <View className="p-5 flex-1 justify-between">
+                          <View>
+                            <View className="flex-row items-center mb-3">
+                              <Feather name="calendar" size={10} color="#64748B" />
+                              <Text className="text-[10px] text-textSecondary dark:text-gray-400 ml-1.5 mr-4 uppercase font-bold tracking-wider">{dateStr}</Text>
+                              <Feather name="clock" size={10} color="#64748B" />
+                              <Text className="text-[10px] text-textSecondary dark:text-gray-400 ml-1.5 uppercase font-bold tracking-wider">5 min read</Text>
+                            </View>
+                            
+                            <Text className="text-lg font-bold text-textPrimary dark:text-white mb-2 leading-tight" numberOfLines={2}>
+                              {title}
+                            </Text>
+                            
+                            <Text className="text-sm text-textSecondary dark:text-gray-300 mb-4 leading-relaxed" numberOfLines={3}>
+                              {excerpt}
+                            </Text>
+                          </View>
+                          
+                          <View className="mt-2 border-t border-gray-100 dark:border-gray-700 pt-4 flex-row items-center">
+                            <Text className="text-accent font-bold text-sm mr-2">Read Full Article</Text>
+                            <Feather name="arrow-right" size={14} color="#1a87e1" />
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                }}
+              />
+              <View className="flex-row justify-center items-center mt-4">
+                {blogPosts.slice(0, 3).map((_, index) => (
+                  <View
+                    key={index}
+                    className={`h-1.5 rounded-full mx-1 ${
+                      activeBlogIndex === index ? 'w-6 bg-[#1a87e1]' : 'w-2 bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : (
+            <View className="py-12 items-center justify-center border border-dashed border-gray-200 dark:border-gray-700 rounded-3xl mx-4 bg-primary dark:bg-gray-900">
+              <Text className="italic text-textSecondary dark:text-gray-400">No health insights found at the moment.</Text>
+            </View>
+          )}
+
+          {/* Mandatory Medical Disclaimer */}
+          <View className="mt-8 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 bg-primary dark:bg-gray-900 mx-2 shadow-sm">
+            <Text className="text-[10px] italic text-textSecondary dark:text-gray-400 text-center leading-relaxed">
+              Disclaimer: This information is generated by AI based on public health guidelines and is for educational purposes only. 
+              It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of 
+              your physician or other qualified health provider with any questions you may have regarding a medical condition.
+            </Text>
           </View>
         </View>
 

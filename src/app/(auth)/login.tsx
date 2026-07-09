@@ -17,6 +17,7 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
     webClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
     androidClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
     iosClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
@@ -24,8 +25,12 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (response?.type === 'success') {
-      const { id_token } = response.params;
-      handleGoogleCredentialLogin(id_token);
+      const idToken = response.authentication?.idToken || response.params?.id_token;
+      if (idToken) {
+        handleGoogleCredentialLogin(idToken);
+      } else {
+        Alert.alert("Google Login Failed", "Could not get identity token from Google.");
+      }
     }
   }, [response]);
 
@@ -157,10 +162,10 @@ export default function LoginScreen() {
           <TouchableOpacity 
             className="flex-row items-center justify-center border border-gray-300 rounded-xl py-4 mb-4 bg-white shadow-sm"
             onPress={handleGoogleLogin}
-            disabled={isLoading}
+            disabled={isLoading || !request}
           >
-            <AntDesign name="google" size={20} color="#DB4437" />
-            <Text className="text-gray-800 font-bold ml-2">Sign in with Google</Text>
+            <Image source={require('../../../assets/images/google-icon.png')} style={{ width: 22, height: 22 }} resizeMode="contain" />
+            <Text className="text-gray-800 font-bold ml-3 text-[15px]">Sign in with Google</Text>
           </TouchableOpacity>
 
           <TouchableOpacity className="items-center mt-2" onPress={handleForgotPassword} disabled={isLoading}>

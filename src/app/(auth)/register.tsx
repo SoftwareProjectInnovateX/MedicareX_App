@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { Feather, AntDesign } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
@@ -13,8 +17,42 @@ export default function RegisterScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  const { register } = useAuth();
+  const { register, loginWithGoogleCredential } = useAuth();
   const router = useRouter();
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
+    webClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
+    androidClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
+    iosClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const idToken = response.authentication?.idToken || response.params?.id_token;
+      if (idToken) {
+        handleGoogleCredentialLogin(idToken);
+      } else {
+        Alert.alert("Google Login Failed", "Could not get identity token from Google.");
+      }
+    }
+  }, [response]);
+
+  const handleGoogleCredentialLogin = async (idToken: string) => {
+    setIsLoading(true);
+    try {
+      await loginWithGoogleCredential(idToken);
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert("Google Login Failed", error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    promptAsync();
+  };
 
   const handlePhoneChange = (text: string) => {
     if (!text.startsWith('+94')) {
@@ -176,9 +214,13 @@ export default function RegisterScreen() {
               <View className="flex-1 h-px bg-gray-200" />
             </View>
 
-            <TouchableOpacity className="flex-row items-center justify-center border border-gray-300 rounded-xl py-4 mb-4 bg-white shadow-sm">
-              <AntDesign name="google" size={20} color="#DB4437" />
-              <Text className="text-gray-800 font-bold ml-2">Sign in with Google</Text>
+            <TouchableOpacity 
+              className="flex-row items-center justify-center border border-gray-300 rounded-xl py-4 mb-4 bg-white shadow-sm"
+              onPress={handleGoogleLogin}
+              disabled={isLoading || !request}
+            >
+              <Image source={require('../../../assets/images/google-icon.png')} style={{ width: 22, height: 22 }} resizeMode="contain" />
+              <Text className="text-gray-800 font-bold ml-3 text-[15px]">Sign in with Google</Text>
             </TouchableOpacity>
           </View>
         </View>

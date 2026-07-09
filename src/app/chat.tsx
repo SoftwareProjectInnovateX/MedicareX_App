@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Modal, FlatList } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 
-const API_BASE = 'http://10.207.127.9:5000/api';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://10.126.76.9:5000/api';
 
 const BouncingDots = () => {
   const dot1 = useRef(new Animated.Value(0)).current;
@@ -44,19 +45,117 @@ const BouncingDots = () => {
   );
 };
 
+interface Message {
+  role: 'user' | 'bot';
+  text: string;
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  updatedAt: number;
+}
+
+const STORAGE_KEY = '@mediccarex_chat_history';
+
+const defaultMessage: Message = {
+  role: "bot",
+  text: "Hello! I'm the MediCareX Health Assistant. I answer general health questions based on WHO guidelines.\n\nHow can I help you today?\n\n⚕️ General health information only — not a substitute for professional medical advice.",
+};
+
 export default function ChatScreen() {
   const router = useRouter();
   const { user } = useAuth();
   
-  const [messages, setMessages] = useState([
-    {
-      role: "bot",
-      text: "Hello! I'm the MediCareX Health Assistant. I answer general health questions based on WHO guidelines.\n\nHow can I help you today?\n\n⚕️ General health information only — not a substitute for professional medical advice.",
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([defaultMessage]);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
+  
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    loadChatHistory();
+  }, []);
+
+  const loadChatHistory = async () => {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEY);
+      if (data) {
+        const parsed = JSON.parse(data) as ChatSession[];
+        setChatSessions(parsed);
+        if (parsed.length > 0) {
+          setCurrentChatId(parsed[0].id);
+          setMessages(parsed[0].messages);
+        } else {
+          startNewChat();
+        }
+      } else {
+        startNewChat();
+      }
+    } catch (e) {
+      console.error('Failed to load history', e);
+      startNewChat();
+    }
+  };
+
+  const saveChatSessions = async (sessions: ChatSession[]) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+      setChatSessions(sessions);
+    } catch (e) {
+      console.error('Failed to save history', e);
+    }
+  };
+
+  const startNewChat = () => {
+    const newId = Date.now().toString();
+    setCurrentChatId(newId);
+    setMessages([defaultMessage]);
+    setIsHistoryModalVisible(false);
+  };
+
+  const selectChat = (id: string) => {
+    const session = chatSessions.find(s => s.id === id);
+    if (session) {
+      setCurrentChatId(session.id);
+      setMessages(session.messages);
+      setIsHistoryModalVisible(false);
+    }
+  };
+
+  const updateCurrentSession = async (newMessages: Message[]) => {
+    let title = "New Chat";
+    if (newMessages.length >= 2 && newMessages[1].role === 'user') {
+      title = newMessages[1].text.slice(0, 30) + (newMessages[1].text.length > 30 ? '...' : '');
+    }
+
+    const session: ChatSession = {
+      id: currentChatId || Date.now().toString(),
+      title,
+      messages: newMessages,
+      updatedAt: Date.now(),
+    };
+
+    let updatedSessions = [...chatSessions];
+    const index = updatedSessions.findIndex(s => s.id === session.id);
+    if (index >= 0) {
+      updatedSessions[index] = session;
+    } else {
+      updatedSessions.unshift(session);
+    }
+    
+    // Sort by most recent
+    updatedSessions.sort((a, b) => b.updatedAt - a.updatedAt);
+    
+    await saveChatSessions(updatedSessions);
+    if (!currentChatId) {
+      setCurrentChatId(session.id);
+    }
+  };
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -71,9 +170,10 @@ export default function ChatScreen() {
     const userMessage = input.trim();
     setInput('');
 
-    const updatedMessages = [...messages, { role: "user", text: userMessage }];
+    const updatedMessages: Message[] = [...messages, { role: "user", text: userMessage }];
     setMessages(updatedMessages);
     setIsLoading(true);
+    await updateCurrentSession(updatedMessages);
 
     try {
       const history = updatedMessages
@@ -93,7 +193,7 @@ export default function ChatScreen() {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${API_BASE}/chat`, {
+      const response = await fetch(`${API_BASE}/admin/chat`, {
         method: "POST",
         headers,
         body: JSON.stringify({ message: userMessage, history }),
@@ -102,25 +202,20 @@ export default function ChatScreen() {
       if (!response.ok) throw new Error("Chat failed");
 
       const data = await response.json();
-      setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
+      const finalMessages: Message[] = [...updatedMessages, { role: "bot", text: data.reply }];
+      setMessages(finalMessages);
+      await updateCurrentSession(finalMessages);
     } catch (err) {
       console.error("Chat error:", err);
-      setMessages((prev) => [
-        ...prev,
+      const errorMessages: Message[] = [
+        ...updatedMessages,
         { role: "bot", text: "Sorry, I couldn't connect. Please try again." },
-      ]);
+      ];
+      setMessages(errorMessages);
+      await updateCurrentSession(errorMessages);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const clearChat = () => {
-    setMessages([
-      {
-        role: "bot",
-        text: "Hello! I'm the MediCareX Health Assistant. I answer general health questions based on WHO guidelines.\n\nHow can I help you today?\n\n⚕️ General health information only — not a substitute for professional medical advice.",
-      }
-    ]);
   };
 
   return (
@@ -141,15 +236,60 @@ export default function ChatScreen() {
         </View>
 
         <View className="flex-row items-center">
-          <View className="flex-row items-center mr-3">
-            <View className="w-2 h-2 bg-green-400 rounded-full mr-1"></View>
-            <Text className="text-blue-200 text-xs">Online</Text>
-          </View>
-          <TouchableOpacity onPress={clearChat} className="p-1">
-            <Feather name="refresh-cw" size={16} color="#ffffff" />
+          <TouchableOpacity onPress={startNewChat} className="p-2 mr-1">
+            <Feather name="plus" size={20} color="#ffffff" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsHistoryModalVisible(true)} className="p-2">
+            <Feather name="clock" size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
       </View>
+
+      <Modal
+        visible={isHistoryModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsHistoryModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white dark:bg-gray-800 rounded-t-3xl h-[70%]">
+            <View className="flex-row justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700">
+              <Text className="text-lg font-bold text-gray-900 dark:text-white">Chat History</Text>
+              <TouchableOpacity onPress={() => setIsHistoryModalVisible(false)} className="p-2">
+                <Feather name="x" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={chatSessions}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ padding: 16 }}
+              ListEmptyComponent={
+                <Text className="text-center text-gray-500 mt-10">No past chats found.</Text>
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  onPress={() => selectChat(item.id)}
+                  className={`p-4 rounded-xl mb-3 border ${
+                    currentChatId === item.id 
+                      ? 'bg-blue-50 border-blue-200 dark:bg-gray-700 dark:border-gray-600' 
+                      : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
+                  }`}
+                >
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-gray-900 dark:text-white font-medium flex-1 mr-2" numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Feather name="chevron-right" size={16} color="#9ca3af" />
+                  </View>
+                  <Text className="text-gray-500 text-xs mt-2">
+                    {new Date(item.updatedAt).toLocaleString()} • {item.messages.length - 1} messages
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
 
       <KeyboardAvoidingView 
         style={{ flex: 1 }} 

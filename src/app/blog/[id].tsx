@@ -6,6 +6,8 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'nativewind';
 import { useAuth } from '../../context/AuthContext';
+import { db } from '../../services/firebase';
+import { doc, getDoc, updateDoc, increment, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 
 // Simple Markdown Renderer for React Native
 const SimpleMarkdown = ({ content }: { content: string }) => {
@@ -85,21 +87,27 @@ export default function BlogDetailScreen() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const hostIp = getHostIp();
-        const response = await fetch(`http://${hostIp}:5000/api/customer/blogs/${id}`);
-        if (!response.ok) throw new Error("Not found");
-        const data = await response.json();
-        setBlog(data);
+        const docRef = doc(db, 'blogs', id as string);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) throw new Error("Not found");
+        const data = docSnap.data();
+        setBlog({ id: docSnap.id, ...data });
         setLikes(data.likes || 0);
         
         // Fetch comments
         try {
-          const commentsRes = await fetch(`http://${hostIp}:5000/api/customer/blogs/${id}/comments`);
-          if (commentsRes.ok) {
-            const commentsData = await commentsRes.json();
-            setComments(commentsData);
-          }
-        } catch(e) {}
+          const q = query(collection(db, 'comments'), where('blogId', '==', id));
+          const commentsSnap = await getDocs(q);
+          const commentsData = commentsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          commentsData.sort((a: any, b: any) => {
+            const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return timeB - timeA;
+          });
+          setComments(commentsData);
+        } catch(e) {
+          console.log("Error fetching comments", e);
+        }
         
       } catch (error) {
         console.error("Error fetching blog:", error);
@@ -118,8 +126,8 @@ export default function BlogDetailScreen() {
     setHasLiked(true);
     setLikes(prev => prev + 1);
     try {
-      const hostIp = getHostIp();
-      await fetch(`http://${hostIp}:5000/api/customer/blogs/${id}/like`, { method: 'POST' });
+      const docRef = doc(db, 'blogs', id as string);
+      await updateDoc(docRef, { likes: increment(1) });
     } catch (error) {
       console.error("Error liking blog", error);
     }
@@ -139,19 +147,18 @@ export default function BlogDetailScreen() {
     if (!newComment.trim()) return;
     setIsSubmitting(true);
     try {
-      const hostIp = getHostIp();
       const storedName = await AsyncStorage.getItem('userName');
       const userName = storedName || user?.displayName || 'App User';
-      const res = await fetch(`http://${hostIp}:5000/api/customer/blogs/${id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userName, text: newComment })
-      });
-      if (res.ok) {
-        const addedComment = await res.json();
-        setComments([addedComment, ...comments]);
-        setNewComment('');
-      }
+      const commentObj = {
+        blogId: id,
+        userName,
+        text: newComment,
+        createdAt: new Date().toISOString()
+      };
+      
+      const docRef = await addDoc(collection(db, 'comments'), commentObj);
+      setComments([{ id: docRef.id, ...commentObj }, ...comments]);
+      setNewComment('');
     } catch (error) {
       console.error("Error adding comment", error);
     } finally {

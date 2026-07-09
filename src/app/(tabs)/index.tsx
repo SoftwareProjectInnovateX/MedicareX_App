@@ -146,13 +146,20 @@ export default function HomeScreen() {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const hostIp = getHostIp();
-        const response = await fetch(`http://${hostIp}:5000/api/customer/blogs/latest`);
-        if (!response.ok) throw new Error(`Server error: ${response.status}`);
-        const data = await response.json();
-        setBlogPosts(Array.isArray(data) ? data : []);
+        const q = query(
+          collection(db, 'blogs'),
+          where('status', '==', 'PUBLISHED')
+        );
+        const snapshot = await getDocs(q);
+        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        docs.sort((a: any, b: any) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return timeB - timeA;
+        });
+        setBlogPosts(docs.slice(0, 10));
       } catch (error: any) {
-        console.error("Error fetching blogs:", error.message);
+        console.error("Error fetching blogs from Firestore:", error.message);
         setBlogPosts([]);
       } finally {
         setLoadingBlogs(false);

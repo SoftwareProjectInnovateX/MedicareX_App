@@ -98,7 +98,6 @@ export default function NotificationsScreen() {
         const combined = [...filtered, ...notifs].sort((a, b) => b.time - a.time);
         return combined;
       });
-      setLoading(false);
     });
 
     // Subscribe to Customer Returns
@@ -129,15 +128,88 @@ export default function NotificationsScreen() {
       });
     });
 
+    // Subscribe to Contact Messages (Chat)
+    let unsubChat = () => {};
+    if (user.email) {
+      const qChat = query(collection(db, 'contactMessages'), where('email', '==', user.email));
+      unsubChat = onSnapshot(qChat, (snap) => {
+        let notifs: any[] = [];
+        snap.docs.forEach(d => {
+          const msg = d.data();
+          if (msg.status === 'replied') {
+            notifs.push({
+              id: `chat-rep-${d.id}`,
+              orderId: d.id,
+              title: 'Customer Support Reply',
+              message: `Pharmacist replied: "${(msg.reply || '').slice(0, 30)}..."`,
+              type: 'support_reply',
+              time: msg.createdAt?.seconds * 1000 || Date.now(),
+              icon: 'message-square',
+              color: 'bg-purple-100',
+              iconColor: '#a855f7'
+            });
+          }
+        });
+
+        setNotifications(prev => {
+          const filtered = prev.filter(n => !n.id.startsWith('chat-'));
+          const combined = [...filtered, ...notifs].sort((a, b) => b.time - a.time);
+          return combined;
+        });
+      });
+    }
+
+    // Subscribe to New Arrivals
+    const qNewArrivals = query(
+      collection(db, 'pharmacistProducts'), 
+      where('tags', 'array-contains', 'newArrival'),
+      where('deleted', '==', false)
+    );
+    const unsubNewArrivals = onSnapshot(qNewArrivals, (snap) => {
+      let notifs: any[] = [];
+      snap.docs.forEach(d => {
+        const p = d.data();
+        notifs.push({
+          id: `new-arr-${d.id}`,
+          orderId: d.id, // used for routing to product
+          title: 'New Arrival!',
+          message: `${p.name || p.productName} is now available in stock. Check it out!`,
+          type: 'new_arrival',
+          time: p.createdAt?.seconds * 1000 || Date.now(),
+          icon: 'star',
+          color: 'bg-amber-100',
+          iconColor: '#f59e0b'
+        });
+      });
+
+      setNotifications(prev => {
+        const filtered = prev.filter(n => !n.id.startsWith('new-arr-'));
+        const combined = [...filtered, ...notifs].sort((a, b) => b.time - a.time);
+        return combined;
+      });
+    });
+
+    setLoading(false);
+
     return () => {
       unsubPres();
       unsubOrders();
       unsubReturns();
+      unsubChat();
+      unsubNewArrivals();
     };
   }, [user]);
 
-  const handlePress = () => {
-    router.push('/orders');
+  const handlePress = (notif: any) => {
+    if (notif.type === 'prescription_approved') {
+      router.push(`/prescription-bill?id=${notif.orderId}`);
+    } else if (notif.type === 'support_reply') {
+      router.push('/support-chat');
+    } else if (notif.type === 'new_arrival') {
+      router.push(`/product/${notif.orderId}`);
+    } else {
+      router.push('/orders');
+    }
   };
 
   return (
@@ -159,7 +231,7 @@ export default function NotificationsScreen() {
             notifications.map(notif => (
               <TouchableOpacity 
                 key={notif.id} 
-                onPress={handlePress}
+                onPress={() => handlePress(notif)}
                 className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-3 border border-[#e5e7eb] dark:border-gray-700 shadow-sm flex-row items-center"
               >
                 <View className={`w-12 h-12 rounded-xl ${notif.color} items-center justify-center mr-4`}>

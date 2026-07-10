@@ -39,8 +39,7 @@
       "expo-font",
       "expo-location",
       "expo-image-picker",
-      "expo-document-picker",
-      "react-native-maps"
+      "expo-document-picker"
     ],
     "experiments": {
       "typedRoutes": true

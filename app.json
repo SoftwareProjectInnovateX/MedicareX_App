@@ -35,7 +35,12 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-font",
+      "expo-location",
+      "expo-image-picker",
+      "expo-document-picker",
+      "react-native-maps"
     ],
     "experiments": {
       "typedRoutes": true

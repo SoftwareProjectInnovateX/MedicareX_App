@@ -93,7 +93,7 @@ export default function Index() {
 
   return (
     <ImageBackground 
-      source={require('../../assets/images/modern_welcome_bg.png')} 
+      source={require('../../assets/images/modern_welcome_bg.jpg')} 
       className="flex-1 w-full h-full"
       resizeMode="cover"
     >

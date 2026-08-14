@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Alert, ActivityIndicator , useColorScheme } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { db } from '../services/firebase';
 import { deleteDoc, doc, updateDoc, writeBatch, increment, getDocs, query, collection, where, setDoc } from 'firebase/firestore';
 
 export default function OrderDetailsScreen() {
+  const colorScheme = useColorScheme();
   const router = useRouter();
   const { orderData } = useLocalSearchParams();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -134,7 +135,7 @@ export default function OrderDetailsScreen() {
       <View className="flex-row items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 p-2">
-            <Feather name="arrow-left" size={24} color="#0f2a5e" />
+            <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
           </TouchableOpacity>
           <Text className="text-xl font-black text-slate-900">Order Details</Text>
         </View>
@@ -185,12 +186,12 @@ export default function OrderDetailsScreen() {
           </Text>
           
           <View className="flex-row items-center">
-            <Feather name="phone" size={14} color="#64748b" />
+            <Feather name="phone" size={14} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748b'} />
             <Text className="text-sm text-slate-600 ml-2">{order.phone || 'N/A'}</Text>
           </View>
           {order.email && (
             <View className="flex-row items-center mt-2">
-              <Feather name="mail" size={14} color="#64748b" />
+              <Feather name="mail" size={14} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748b'} />
               <Text className="text-sm text-slate-600 ml-2">{order.email}</Text>
             </View>
           )}

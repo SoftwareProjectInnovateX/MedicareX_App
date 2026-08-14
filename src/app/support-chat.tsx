@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator , useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { db } from '../services/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 export default function SupportChatScreen() {
+  const colorScheme = useColorScheme();
   const router = useRouter();
   const { user } = useAuth();
   
@@ -35,7 +36,7 @@ export default function SupportChatScreen() {
     <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
       <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <Feather name="arrow-left" size={24} color="#0f2a5e" />
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-textPrimary dark:text-white">Customer Support</Text>
       </View>
@@ -53,7 +54,7 @@ export default function SupportChatScreen() {
                 {/* User Message */}
                 <View className="p-4 bg-gray-50 dark:bg-gray-900 border-b border-[#e5e7eb] dark:border-gray-700">
                   <View className="flex-row items-center mb-2">
-                    <Feather name="user" size={16} color="#64748b" />
+                    <Feather name="user" size={16} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748b'} />
                     <Text className="ml-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Your Message</Text>
                   </View>
                   <Text className="text-sm text-textPrimary dark:text-white leading-5">{msg.message}</Text>

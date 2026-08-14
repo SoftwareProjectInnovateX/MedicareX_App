@@ -123,16 +123,11 @@ export default function SettingsScreen() {
 
   return (
     <View className="flex-1 bg-primary dark:bg-gray-900">
-      {/* Header */}
-      <View className="px-6 pt-14 pb-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700 flex-row justify-between items-center shadow-sm z-10">
-        <TouchableOpacity 
-          className="w-10 h-10 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center"
-          onPress={() => router.back()}
-        >
-          <Feather name="arrow-left" color={colorScheme === 'dark' ? '#f1f5f9' : '#1E293B'} size={20} />
+      <View className="flex-row items-center px-4 pt-14 pb-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
+        <TouchableOpacity onPress={() => router.back()} className="mr-4">
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#f1f5f9' : '#0f2a5e'} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-textPrimary dark:text-white">Settings</Text>
-        <View className="w-10" />
       </View>
 
       <KeyboardAvoidingView 

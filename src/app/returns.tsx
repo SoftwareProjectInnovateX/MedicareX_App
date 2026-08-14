@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform, Modal , useColorScheme } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,7 @@ const RETURN_REASONS = [
 ];
 
 export default function ReturnsScreen() {
+  const colorScheme = useColorScheme();
   const router = useRouter();
   const { user } = useAuth();
   
@@ -80,7 +81,7 @@ export default function ReturnsScreen() {
     <View className="flex-1 bg-primary dark:bg-gray-900">
       <View className="px-6 pt-14 pb-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700 flex-row justify-between items-center shadow-sm z-10">
         <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center">
-          <Feather name="arrow-left" color="#1E293B" size={20} />
+          <Feather name="arrow-left" color={colorScheme === 'dark' ? '#FFFFFF' : '#1E293B'} size={20} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-textPrimary dark:text-white">Returns</Text>
         <View className="w-10" />
@@ -107,7 +108,7 @@ export default function ReturnsScreen() {
                 onPress={() => setShowPicker(true)}
               >
                 <Text className="text-textPrimary dark:text-white font-bold">{reason}</Text>
-                <Feather name="chevron-down" color="#64748b" size={18} />
+                <Feather name="chevron-down" color={colorScheme === 'dark' ? '#FFFFFF' : '#64748b'} size={18} />
               </TouchableOpacity>
             </View>
             <View className="mb-2">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Linking, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -64,6 +64,7 @@ const PRESETS = ['Pain relief', 'Immune support', 'Digestive care', 'Cold & flu'
 
 export default function BrandsScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
   
   const [brands, setBrands] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -183,7 +184,7 @@ export default function BrandsScreen() {
     <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
       <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <Feather name="arrow-left" size={24} color="#0f2a5e" />
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-textPrimary dark:text-white">Explore Brands</Text>
       </View>

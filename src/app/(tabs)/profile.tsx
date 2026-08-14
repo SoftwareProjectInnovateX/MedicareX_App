@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, ActivityIndicator, Alert, Platform, useColorScheme } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -13,6 +13,7 @@ import { db, storage, auth } from '../../services/firebase';
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const colorScheme = useColorScheme();
   
   const [userData, setUserData] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -196,7 +197,7 @@ export default function ProfileScreen() {
                   <Text className="font-bold text-textPrimary dark:text-white text-base">{item.title}</Text>
                   <Text className="text-textSecondary dark:text-gray-300 text-xs mt-0.5">{item.subtitle}</Text>
                 </View>
-                <Feather name="chevron-right" color="#CBD5E1" size={24} />
+                <Feather name="chevron-right" color={colorScheme === 'dark' ? '#FFFFFF' : '#CBD5E1'} size={24} />
               </TouchableOpacity>
             ))}
           </View>
@@ -218,7 +219,7 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between items-center mb-6">
               <Text className="text-xl font-black text-textPrimary dark:text-white">Edit Profile</Text>
               <TouchableOpacity onPress={() => setShowEditModal(false)} className="w-8 h-8 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center">
-                <Feather name="x" size={20} color="#64748B" />
+                <Feather name="x" size={20} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748B'} />
               </TouchableOpacity>
             </View>
 

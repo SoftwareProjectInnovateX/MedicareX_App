@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert , useColorScheme } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { db } from '../services/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 export default function PrescriptionBillScreen() {
+  const colorScheme = useColorScheme();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   
@@ -101,7 +102,7 @@ export default function PrescriptionBillScreen() {
       <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
         <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
-            <Feather name="arrow-left" size={24} color="#0f2a5e" />
+            <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
           </TouchableOpacity>
           <Text className="text-xl font-bold text-textPrimary dark:text-white">Prescription Bill</Text>
         </View>
@@ -118,7 +119,7 @@ export default function PrescriptionBillScreen() {
     <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
       <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4" disabled={processing}>
-          <Feather name="arrow-left" size={24} color="#0f2a5e" />
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-textPrimary dark:text-white">Prescription Bill</Text>
       </View>

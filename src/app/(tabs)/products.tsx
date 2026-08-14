@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput, Platform, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, TextInput, Platform, Modal , useColorScheme } from 'react-native';
 import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
@@ -9,6 +9,7 @@ import { useRouter, useGlobalSearchParams, useFocusEffect } from 'expo-router';
 import { CATEGORIES } from '../../constants/categories';
 
 export default function ProductsScreen() {
+  const colorScheme = useColorScheme();
   const { category: initialCategory } = useGlobalSearchParams<{ category?: string }>();
 
   const [products, setProducts] = useState<any[]>([]);
@@ -189,7 +190,7 @@ export default function ProductsScreen() {
               }}
             >
               <Text className="text-xs text-textSecondary dark:text-gray-300 font-bold mr-1">Clear</Text>
-              <Feather name="x" size={12} color="#64748B" />
+              <Feather name="x" size={12} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748B'} />
             </TouchableOpacity>
           )}
           <TouchableOpacity 
@@ -206,7 +207,7 @@ export default function ProductsScreen() {
       {/* Search */}
       <View className="px-6 py-4 bg-white dark:bg-gray-800 shadow-sm mb-4">
         <View className="flex-row items-center bg-slate-100 dark:bg-gray-800 px-4 py-3 rounded-2xl">
-          <Feather name="search" color="#64748B" size={20} />
+          <Feather name="search" color={colorScheme === 'dark' ? '#FFFFFF' : '#64748B'} size={20} />
           <TextInput 
             placeholder="Search for medicines, vitamins..." 
             className="flex-1 ml-3 text-base text-textPrimary dark:text-white"
@@ -322,7 +323,7 @@ export default function ProductsScreen() {
             <View className="flex-row justify-between items-center mb-6">
               <Text className="text-xl font-black text-textPrimary dark:text-white">Filter & Sort</Text>
               <TouchableOpacity onPress={() => setShowFilterModal(false)} className="w-8 h-8 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center">
-                <Feather name="x" size={18} color="#64748B" />
+                <Feather name="x" size={18} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748B'} />
               </TouchableOpacity>
             </View>
 

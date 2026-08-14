@@ -16,12 +16,11 @@ export default function HelpCenterScreen() {
 
   return (
     <View className="flex-1 bg-primary dark:bg-gray-900">
-      <View className="px-6 pt-14 pb-4 bg-white dark:bg-gray-800 border-b border-[#e5e7eb] dark:border-gray-700 flex-row justify-between items-center shadow-sm z-10">
-        <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center">
-          <Feather name="arrow-left" color={colorScheme === 'dark' ? '#f1f5f9' : '#1E293B'} size={20} />
+      <View className="flex-row items-center px-4 pt-14 pb-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
+        <TouchableOpacity onPress={() => router.back()} className="mr-4">
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#f1f5f9' : '#0f2a5e'} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-textPrimary dark:text-white">Help Center</Text>
-        <View className="w-10" />
       </View>
       <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
         <Text className="text-3xl font-black text-textPrimary dark:text-white mb-2">How can we help you?</Text>

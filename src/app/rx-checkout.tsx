@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert , useColorScheme } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { db } from '../services/firebase';
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function RxCheckoutScreen() {
+  const colorScheme = useColorScheme();
   const router = useRouter();
   const { user } = useAuth();
   const { rxId, amount, items: itemsStr } = useLocalSearchParams<{ rxId: string, amount: string, items: string }>();
@@ -88,7 +89,7 @@ export default function RxCheckoutScreen() {
     <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
       <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <Feather name="arrow-left" size={24} color="#0f2a5e" />
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-textPrimary dark:text-white">Prescription Checkout</Text>
       </View>

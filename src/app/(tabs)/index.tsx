@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Linking, Dimensions, FlatList, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Linking, Dimensions, FlatList, Platform  } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'nativewind';
@@ -280,7 +280,7 @@ export default function HomeScreen() {
 
           
           <View className="flex-row items-center bg-white dark:bg-gray-800 px-4 py-3 rounded-2xl shadow-sm border border-accentLight">
-            <Feather name="search" color="#64748B" size={20} />
+            <Feather name="search" color={colorScheme === 'dark' ? '#FFFFFF' : '#64748B'} size={20} />
             <TextInput 
               placeholder="Search medicine..." 
               className="flex-1 ml-3 text-base text-textPrimary dark:text-white"
@@ -623,9 +623,9 @@ export default function HomeScreen() {
                         <View className="p-5 flex-1 justify-between">
                           <View>
                             <View className="flex-row items-center mb-3">
-                              <Feather name="calendar" size={10} color="#64748B" />
+                              <Feather name="calendar" size={10} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748B'} />
                               <Text className="text-[10px] text-textSecondary dark:text-gray-400 ml-1.5 mr-4 uppercase font-bold tracking-wider">{dateStr}</Text>
-                              <Feather name="clock" size={10} color="#64748B" />
+                              <Feather name="clock" size={10} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748B'} />
                               <Text className="text-[10px] text-textSecondary dark:text-gray-400 ml-1.5 uppercase font-bold tracking-wider">5 min read</Text>
                             </View>
                             

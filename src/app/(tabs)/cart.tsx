@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Platform, useColorScheme } from 'react-native';
 import { useCartStore } from '../../stores/cartStore';
 import { useRouter } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function CartScreen() {
   const { items, removeItem, addItem, clearCart } = useCartStore();
   const router = useRouter();
+  const colorScheme = useColorScheme();
 
   // Helper for physical device & emulator localhost image resolution
   const formatImageUrl = (url?: string) => {
@@ -26,7 +27,7 @@ export default function CartScreen() {
       {/* Header */}
       <View className="px-6 py-4 flex-row items-center border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <Feather name="arrow-left" size={24} color="#1e293b" />
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#1e293b'} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-textPrimary dark:text-white">Shopping Cart</Text>
       </View>
@@ -35,7 +36,7 @@ export default function CartScreen() {
         {items.length === 0 ? (
           <View className="items-center justify-center py-20">
             <View className="w-24 h-24 bg-slate-100 dark:bg-gray-800 rounded-full items-center justify-center mb-6">
-              <Feather name="shopping-cart" size={40} color="#64748b" />
+              <Feather name="shopping-cart" size={40} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748b'} />
             </View>
             <Text className="text-xl font-bold text-textPrimary dark:text-white mb-2">Your cart is empty</Text>
             <Text className="text-textSecondary dark:text-gray-300 text-center mb-8">Looks like you haven't added any items to your cart yet.</Text>
@@ -138,7 +139,7 @@ export default function CartScreen() {
                   className="px-4 py-3 flex-row items-center"
                   onPress={() => router.push('/products')}
                 >
-                  <Feather name="arrow-left" size={16} color="#64748b" />
+                  <Feather name="arrow-left" size={16} color={colorScheme === 'dark' ? '#FFFFFF' : '#64748b'} />
                   <Text className="text-textSecondary dark:text-gray-300 ml-2">Continue Shopping</Text>
                 </TouchableOpacity>
               </View>

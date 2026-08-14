@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform, TextInput, useColorScheme } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -11,6 +11,7 @@ import { CATEGORIES } from '../../constants/categories';
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const colorScheme = useColorScheme();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
@@ -180,13 +181,13 @@ export default function ProductDetailScreen() {
           className="w-10 h-10 bg-white dark:bg-gray-800/80 rounded-full items-center justify-center backdrop-blur-md shadow-sm"
           onPress={() => router.back()}
         >
-          <Feather name="arrow-left" color="#1E293B" size={20} />
+          <Feather name="arrow-left" color={colorScheme === 'dark' ? '#FFFFFF' : '#1E293B'} size={20} />
         </TouchableOpacity>
         <TouchableOpacity 
           className="w-10 h-10 bg-white dark:bg-gray-800/80 rounded-full items-center justify-center backdrop-blur-md shadow-sm relative"
           onPress={() => router.push('/cart')}
         >
-          <Feather name="shopping-cart" color="#1E293B" size={20} />
+          <Feather name="shopping-cart" color={colorScheme === 'dark' ? '#FFFFFF' : '#1E293B'} size={20} />
           {cartItemsCount > 0 && (
             <View className="absolute -top-1 -right-1 bg-red-600 rounded-full w-5 h-5 items-center justify-center border-2 border-white">
               <Text className="text-white text-[10px] font-bold">{cartItemsCount}</Text>
@@ -341,7 +342,7 @@ export default function ProductDetailScreen() {
             className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full items-center justify-center shadow-sm"
             onPress={() => setQty(prev => prev > 1 ? prev - 1 : 1)}
           >
-            <Feather name="minus" color="#1E293B" size={20} />
+            <Feather name="minus" color={colorScheme === 'dark' ? '#FFFFFF' : '#1E293B'} size={20} />
           </TouchableOpacity>
           <Text className="w-10 text-center font-bold text-lg text-textPrimary dark:text-white">{qty}</Text>
           <TouchableOpacity 
@@ -349,7 +350,7 @@ export default function ProductDetailScreen() {
             onPress={() => setQty(prev => prev < (product.stock || 0) ? prev + 1 : prev)}
             disabled={qty >= (product.stock || 0)}
           >
-            <Feather name="plus" color="#1E293B" size={20} />
+            <Feather name="plus" color={colorScheme === 'dark' ? '#FFFFFF' : '#1E293B'} size={20} />
           </TouchableOpacity>
         </View>
 

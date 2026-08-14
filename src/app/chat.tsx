@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Modal, FlatList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Animated, Modal, FlatList, useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -114,6 +114,7 @@ export default function ChatScreen() {
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const colorScheme = useColorScheme();
   const [catalogContext, setCatalogContext] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -380,7 +381,7 @@ export default function ChatScreen() {
                     <Text className="text-gray-900 dark:text-white font-medium flex-1 mr-2" numberOfLines={1}>
                       {item.title}
                     </Text>
-                    <Feather name="chevron-right" size={16} color="#9ca3af" />
+                    <Feather name="chevron-right" size={16} color={colorScheme === 'dark' ? '#FFFFFF' : '#9ca3af'} />
                   </View>
                   <Text className="text-gray-500 text-xs mt-2">
                     {new Date(item.updatedAt).toLocaleString()} • {item.messages.length - 1} messages

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 export default function NotificationsScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const colorScheme = useColorScheme();
   
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,7 +217,7 @@ export default function NotificationsScreen() {
     <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
       <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <Feather name="arrow-left" size={24} color="#0f2a5e" />
+          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-textPrimary dark:text-white">Notifications</Text>
       </View>
@@ -241,7 +242,7 @@ export default function NotificationsScreen() {
                   <Text className="font-bold text-textPrimary dark:text-white text-base mb-1">{notif.title}</Text>
                   <Text className="text-textSecondary dark:text-gray-300 text-sm">{notif.message}</Text>
                 </View>
-                <Feather name="chevron-right" size={16} color="#94a3b8" />
+                <Feather name="chevron-right" size={16} color={colorScheme === 'dark' ? '#FFFFFF' : '#94a3b8'} />
               </TouchableOpacity>
             ))
           ) : (

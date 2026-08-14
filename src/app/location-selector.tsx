@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ActivityIndicator , useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import { useLocationStore } from '../stores/locationStore';
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
 export default function LocationSelectorScreen() {
+  const colorScheme = useColorScheme();
   const router = useRouter();
   const { address: currentAddress, coordinates: currentCoords, setLocation } = useLocationStore();
   const mapRef = useRef<MapView>(null);
@@ -63,7 +64,7 @@ export default function LocationSelectorScreen() {
       <View className="flex-row items-center justify-between p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm z-20">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
-            <Feather name="arrow-left" size={24} color="#0f2a5e" />
+            <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
           </TouchableOpacity>
           <Text className="text-xl font-bold text-textPrimary dark:text-white">Select Location</Text>
         </View>

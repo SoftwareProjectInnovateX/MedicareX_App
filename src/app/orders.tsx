@@ -13,6 +13,7 @@ import { collection, onSnapshot, query, orderBy, where, doc, updateDoc } from 'f
 
 const OrderCard = ({ order }: { order: any }) => {
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
 
   const handleAccept = () => {
     router.push(`/rx-checkout?rxId=${order.id}&amount=${order.totalPrice || order.totalAmount || order.total || 0}&items=${encodeURIComponent(JSON.stringify(order.medications || []))}`);
@@ -97,7 +98,7 @@ const OrderCard = ({ order }: { order: any }) => {
             className="flex-row items-center bg-accentLight dark:bg-gray-800 px-4 py-2 rounded-xl"
           >
             <Text className="text-accent text-xs font-bold mr-1">View Details</Text>
-            <Feather name="chevron-right" size={14} color="#1a87e1" />
+            <Feather name="chevron-right" size={14} color={colorScheme === 'dark' ? '#FFFFFF' : '#1a87e1'} />
           </Pressable>
         )}
       </View>

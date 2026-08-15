@@ -1,14 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import * as ImagePicker from 'expo-image-picker';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { Image as RNImage } from 'react-native';
 
 export default function SupportChatScreen() {
@@ -32,29 +30,33 @@ export default function SupportChatScreen() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedMessages: any[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
         const createdAt = data.createdAt ? data.createdAt.toMillis() : Date.now();
         
         // The user's original message
-        if (data.message || data.imageUrl) {
+        if (!data.userDeletedMessage && (data.message || data.imageUrl || data.deletedForEveryone)) {
           fetchedMessages.push({
-            id: doc.id + '_user',
+            id: docSnap.id + '_user',
+            docId: docSnap.id,
             role: 'user',
-            text: data.message || '',
-            imageUrl: data.imageUrl,
+            text: data.deletedForEveryone ? "🚫 This message was deleted" : (data.message || ''),
+            imageUrl: data.deletedForEveryone ? null : data.imageUrl,
             createdAt: createdAt,
-            status: data.status
+            status: data.status,
+            isDeleted: !!data.deletedForEveryone
           });
         }
         // The pharmacist's reply (if any)
-        if (data.reply) {
+        if (data.reply && !data.replyDeletedForUser) {
           // We add a tiny delay to the pharmacist's message timestamp so it sorts after the user's message
           fetchedMessages.push({
-            id: doc.id + '_pharmacist',
+            id: docSnap.id + '_pharmacist',
+            docId: docSnap.id,
             role: 'pharmacist',
             text: data.reply,
             createdAt: createdAt + 1,
+            isDeleted: false
           });
         }
       });
@@ -74,39 +76,40 @@ export default function SupportChatScreen() {
     }, 100);
   }, [messages]);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.3, // Lower quality to keep base64 size small for Firestore
-      base64: true, // Request base64 string
-    });
+  const handleLongPress = (msg: any) => {
+    if (msg.isDeleted) return;
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      if (asset.base64) {
-        const base64Url = `data:image/jpeg;base64,${asset.base64}`;
-        await sendImage(base64Url);
-      }
-    }
-  };
-
-  const sendImage = async (base64Url: string) => {
-    if (!user?.email) return;
-    setIsLoading(true);
-    try {
-      await addDoc(collection(db, 'contactMessages'), {
-        name: (user as any)?.fullName || user?.displayName || 'Customer',
-        email: user.email,
-        message: '',
-        imageUrl: base64Url,
-        status: 'unread',
-        createdAt: serverTimestamp()
-      });
-    } catch (err) {
-      console.error("Failed to upload image:", err);
-    } finally {
-      setIsLoading(false);
+    if (msg.role === 'pharmacist') {
+      Alert.alert("Delete Message", "Do you want to delete this message for yourself?", [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete for me", 
+          style: "destructive", 
+          onPress: async () => {
+            const ref = doc(db, 'contactMessages', msg.docId);
+            await updateDoc(ref, { replyDeletedForUser: true });
+          } 
+        }
+      ]);
+    } else {
+      Alert.alert("Delete Message", "What would you like to do?", [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete for me", 
+          onPress: async () => {
+            const ref = doc(db, 'contactMessages', msg.docId);
+            await updateDoc(ref, { userDeletedMessage: true });
+          } 
+        },
+        { 
+          text: "Delete for everyone", 
+          style: "destructive",
+          onPress: async () => {
+            const ref = doc(db, 'contactMessages', msg.docId);
+            await updateDoc(ref, { deletedForEveryone: true });
+          } 
+        }
+      ]);
     }
   };
 
@@ -191,7 +194,9 @@ export default function SupportChatScreen() {
                 </View>
               )}
               
-              <View 
+              <TouchableOpacity 
+                activeOpacity={0.8}
+                onLongPress={() => handleLongPress(msg)}
                 className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                   msg.role === 'user' 
                     ? 'bg-[#1a87e1] rounded-br-sm' 
@@ -207,12 +212,24 @@ export default function SupportChatScreen() {
                 )}
                 {!!msg.text && (
                   <Text 
-                    className={`${msg.role === 'user' ? 'text-white' : 'text-textPrimary dark:text-white'} text-sm leading-5`}
+                    className={`${msg.role === 'user' ? 'text-white' : 'text-textPrimary dark:text-white'} ${msg.isDeleted ? 'italic opacity-80' : ''} text-sm leading-5`}
                   >
                     {msg.text}
                   </Text>
                 )}
-              </View>
+                {msg.role === 'user' && !msg.isDeleted && (
+                  <View className="flex-row justify-end items-center mt-1">
+                    <Text className="text-[10px] text-blue-100 mr-1">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                    <MaterialCommunityIcons 
+                      name="check-all" 
+                      size={14} 
+                      color={msg.status === 'read' ? '#1e3a8a' : '#93c5fd'} 
+                    />
+                  </View>
+                )}
+              </TouchableOpacity>
             </View>
           ))}
           
@@ -224,13 +241,6 @@ export default function SupportChatScreen() {
         </ScrollView>
 
         <View className="p-3 bg-white dark:bg-gray-900 border-t border-[#e5e7eb] dark:border-gray-800 flex-row items-center">
-          <TouchableOpacity 
-            onPress={pickImage}
-            disabled={isLoading}
-            className="p-2 mr-1 rounded-full items-center justify-center bg-gray-100 dark:bg-gray-800"
-          >
-            <Feather name="image" color={colorScheme === 'dark' ? '#9ca3af' : '#64748b'} size={22} />
-          </TouchableOpacity>
           <TextInput 
             value={input}
             onChangeText={setInput}

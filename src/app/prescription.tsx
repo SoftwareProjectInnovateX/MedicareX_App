@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as FileSystem from 'expo-file-system';
 
 export default function PrescriptionScreen() {
   const router = useRouter();
@@ -48,19 +49,27 @@ export default function PrescriptionScreen() {
     try {
       let fileUrl = '';
       
-      // 1. Upload to Firebase Storage
+      // 1. Upload to Cloudinary
       if (file.uri) {
-        const storage = getStorage();
-        // create a unique filename
-        const filename = `prescriptions/${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, filename);
-        
-        // Convert URI to Blob for upload
-        const response = await fetch(file.uri);
-        const blob = await response.blob();
-        
-        await uploadBytes(storageRef, blob);
-        fileUrl = await getDownloadURL(storageRef);
+        const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || 'rr9egjry';
+        const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'ml_default';
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
+
+        const uploadResult = await FileSystem.uploadAsync(uploadUrl, file.uri, {
+          httpMethod: 'POST',
+          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+          fieldName: 'file',
+          parameters: {
+            upload_preset: uploadPreset,
+          },
+        });
+
+        if (uploadResult.status !== 200) {
+           throw new Error("Upload failed: " + uploadResult.body);
+        }
+
+        const data = JSON.parse(uploadResult.body);
+        fileUrl = data.secure_url;
       }
 
       // 2. Save to Firestore
@@ -72,7 +81,7 @@ export default function PrescriptionScreen() {
         imageUrl: fileUrl,
         fileName: file.name,
         status: 'Pending',
-        createdAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
       };
 
       await addDoc(collection(db, 'prescriptions'), prescriptionData);

@@ -4,7 +4,7 @@ import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { db } from '../services/firebase';
-import { collection, addDoc, serverTimestamp, doc, writeBatch, increment } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, writeBatch, increment, updateDoc } from 'firebase/firestore';
 import { useCartStore } from '../stores/cartStore';
 import { Feather } from '@expo/vector-icons';
 
@@ -13,6 +13,7 @@ export default function PaymentScreen() {
   const { config, orderData } = useLocalSearchParams();
   const { clearCart } = useCartStore();
   const [loading, setLoading] = useState(true);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const { colorScheme } = useColorScheme();
 
   const isProcessed = React.useRef(false);
@@ -75,21 +76,54 @@ export default function PaymentScreen() {
     if (url.includes('sandbox.payhere.lk/medicarex/success')) {
       if (isProcessed.current) return;
       isProcessed.current = true;
+      setPaymentProcessing(true);
 
       // Payment successful
       try {
-        // Save order as Paid
-        const batch = writeBatch(db);
-        const orderRef = doc(collection(db, 'CustomerOrders'));
-        batch.set(orderRef, {
-          ...parsedOrderData,
-          orderStatus: 'Paid',
-          paymentStatus: 'success',
-          createdAt: serverTimestamp(),
-        });
+        if (parsedOrderData.isRxOrder) {
+          // Prescription Payment
+          const rxRef = doc(db, 'prescriptions', parsedOrderData.rxId);
+          await updateDoc(rxRef, {
+            status: 'Paid',
+            customerConfirmed: true,
+            paymentMethod: 'ONLINE',
+            paidAt: serverTimestamp(),
+            confirmedAt: serverTimestamp(),
+            customerAddress: parsedOrderData.address,
+            customerName: parsedOrderData.customerName,
+            customerPhone: parsedOrderData.phone
+          });
 
-        await batch.commit();
-        clearCart();
+          const dispensePayload = {
+            rxId: parsedOrderData.rxId,
+            patientName: parsedOrderData.customerName,
+            verifiedPatient: parsedOrderData.customerName,
+            phone: parsedOrderData.phone,
+            address: parsedOrderData.address,
+            orderItems: parsedOrderData.items,
+            total: parsedOrderData.totalAmount,
+            paymentStatus: 'Paid',
+            paymentMethod: 'ONLINE',
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            finalized: false
+          };
+          
+          await addDoc(collection(db, 'pharmacistDispensed'), dispensePayload);
+        } else {
+          // Normal Cart Payment
+          const batch = writeBatch(db);
+          const orderRef = doc(collection(db, 'CustomerOrders'));
+          batch.set(orderRef, {
+            ...parsedOrderData,
+            orderStatus: 'Paid',
+            paymentStatus: 'success',
+            createdAt: serverTimestamp(),
+          });
+          await batch.commit();
+          clearCart();
+        }
+
         router.replace({
           pathname: '/success' as any,
           params: {
@@ -103,6 +137,9 @@ export default function PaymentScreen() {
         Alert.alert('Error', 'Payment was successful but we could not save your order. Please contact support.');
       }
     } else if (url.includes('sandbox.payhere.lk/medicarex/cancel')) {
+      if (isProcessed.current) return;
+      isProcessed.current = true;
+      setPaymentProcessing(true);
       // Payment cancelled
       Alert.alert('Payment Cancelled', 'You cancelled the payment process.', [
         { text: 'Try Again', onPress: () => router.back() }
@@ -120,6 +157,7 @@ export default function PaymentScreen() {
       </View>
       <View style={{ flex: 1 }}>
         <WebView
+          style={{ display: paymentProcessing ? 'none' : 'flex' }}
           source={{ html: htmlContent, baseUrl: 'http://localhost:3000' }}
           onNavigationStateChange={handleNavigationStateChange}
           onLoadEnd={() => setLoading(false)}
@@ -135,9 +173,12 @@ export default function PaymentScreen() {
           ` : undefined}
           renderError={() => <View style={{ flex: 1, backgroundColor: colorScheme === 'dark' ? '#0f172a' : '#f1f5f9' }} />}
         />
-        {loading && (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: colorScheme === 'dark' ? '#0f172a' : '#f1f5f9' }}>
+        {(loading || paymentProcessing) && (
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: colorScheme === 'dark' ? '#0f172a' : '#f1f5f9', zIndex: 10 }}>
             <ActivityIndicator size="large" color="#1a87e1" />
+            {paymentProcessing && (
+              <Text className="mt-4 font-bold text-slate-800 dark:text-gray-300">Processing Payment...</Text>
+            )}
           </View>
         )}
       </View>

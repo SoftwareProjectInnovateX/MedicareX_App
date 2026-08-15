@@ -32,7 +32,7 @@ export default function NotificationsScreen() {
             id: `rx-app-${d.id}`,
             orderId: d.id,
             title: 'Prescription Approved',
-            message: `Your prescription #${d.id.slice(-6)} has been reviewed and a bill is ready.`,
+            message: `Your prescription #${d.id.slice(-6)} has been reviewed. Total Bill: Rs. ${(p.totalAmount || 0).toFixed(2)}`,
             type: 'prescription_approved',
             time: p.processedAt?.seconds * 1000 || p.createdAt?.seconds * 1000 || Date.now(),
             icon: 'check-circle',

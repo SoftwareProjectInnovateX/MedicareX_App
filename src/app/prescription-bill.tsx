@@ -14,7 +14,6 @@ export default function PrescriptionBillScreen() {
   const [prescription, setPrescription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
 
   useEffect(() => {
     if (!id) {
@@ -52,8 +51,8 @@ export default function PrescriptionBillScreen() {
             setProcessing(true);
             try {
               const ref = doc(db, 'prescriptions', id as string);
-              await updateDoc(ref, { status: 'Customer Cancelled' });
-              setPrescription((prev: any) => ({ ...prev, status: 'Customer Cancelled' }));
+              await updateDoc(ref, { status: 'Cancelled' });
+              setPrescription((prev: any) => ({ ...prev, status: 'Cancelled' }));
               Alert.alert("Cancelled", "The pharmacist has been notified.");
             } catch (err) {
               console.error(err);
@@ -67,26 +66,15 @@ export default function PrescriptionBillScreen() {
     );
   };
 
-  const handlePay = async () => {
-    setProcessing(true);
-    try {
-      // Mock payment delay
-      await new Promise(res => setTimeout(res, 1500));
-      
-      const ref = doc(db, 'prescriptions', id as string);
-      await updateDoc(ref, { 
-        status: 'Paid',
-        paymentMethod,
-        paidAt: new Date()
-      });
-      setPrescription((prev: any) => ({ ...prev, status: 'Paid', paymentMethod }));
-      Alert.alert("Payment Successful", "Your medicines will be packed and sent to you.");
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Payment failed.");
-    } finally {
-      setProcessing(false);
-    }
+  const handlePay = () => {
+    router.push({
+      pathname: '/rx-checkout' as any,
+      params: { 
+        rxId: prescription.id,
+        amount: prescription.totalAmount || 0,
+        items: encodeURIComponent(JSON.stringify(prescription.medications || []))
+      }
+    });
   };
 
   if (loading) {
@@ -129,18 +117,18 @@ export default function PrescriptionBillScreen() {
         {/* Status Banner */}
         <View className={`p-4 rounded-xl mb-6 flex-row items-center ${
           prescription.status === 'Paid' ? 'bg-emerald-100' :
-          prescription.status === 'Customer Cancelled' ? 'bg-red-100' :
+          prescription.status === 'Cancelled' ? 'bg-red-100' :
           'bg-blue-100'
         }`}>
           <Feather 
-            name={prescription.status === 'Paid' ? 'check-circle' : prescription.status === 'Customer Cancelled' ? 'x-circle' : 'info'} 
+            name={prescription.status === 'Paid' ? 'check-circle' : prescription.status === 'Cancelled' ? 'x-circle' : 'info'} 
             size={24} 
-            color={prescription.status === 'Paid' ? '#10b981' : prescription.status === 'Customer Cancelled' ? '#ef4444' : '#3b82f6'} 
+            color={prescription.status === 'Paid' ? '#10b981' : prescription.status === 'Cancelled' ? '#ef4444' : '#3b82f6'} 
           />
           <View className="ml-3">
             <Text className={`font-bold ${
               prescription.status === 'Paid' ? 'text-emerald-700' : 
-              prescription.status === 'Customer Cancelled' ? 'text-red-700' : 
+              prescription.status === 'Cancelled' ? 'text-red-700' : 
               'text-blue-700'
             }`}>
               Status: {prescription.status}
@@ -179,28 +167,7 @@ export default function PrescriptionBillScreen() {
           )}
         </View>
 
-        {/* Payment Options (Only visible if Approved) */}
-        {isApproved && (
-          <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-[#e5e7eb] dark:border-gray-700 mb-6">
-            <Text className="font-bold text-lg text-textPrimary dark:text-white mb-3">Payment Method</Text>
-            
-            <TouchableOpacity 
-              onPress={() => setPaymentMethod('card')}
-              className={`flex-row items-center p-3 border rounded-xl mb-3 ${paymentMethod === 'card' ? 'border-[#1a87e1] bg-blue-50 dark:bg-blue-900/20' : 'border-[#e5e7eb] dark:border-gray-700'}`}
-            >
-              <Feather name="credit-card" size={20} color={paymentMethod === 'card' ? '#1a87e1' : '#9ca3af'} />
-              <Text className={`ml-3 font-semibold ${paymentMethod === 'card' ? 'text-[#1a87e1]' : 'text-textPrimary dark:text-white'}`}>Credit / Debit Card</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={() => setPaymentMethod('cash')}
-              className={`flex-row items-center p-3 border rounded-xl ${paymentMethod === 'cash' ? 'border-[#1a87e1] bg-blue-50 dark:bg-blue-900/20' : 'border-[#e5e7eb] dark:border-gray-700'}`}
-            >
-              <Feather name="dollar-sign" size={20} color={paymentMethod === 'cash' ? '#1a87e1' : '#9ca3af'} />
-              <Text className={`ml-3 font-semibold ${paymentMethod === 'cash' ? 'text-[#1a87e1]' : 'text-textPrimary dark:text-white'}`}>Cash on Delivery</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Payment Options will be handled in rx-checkout.tsx */}
 
       </ScrollView>
 
@@ -224,8 +191,8 @@ export default function PrescriptionBillScreen() {
               <ActivityIndicator color="white" size="small" />
             ) : (
               <>
-                <Feather name="check" color="white" size={20} className="mr-2" />
-                <Text className="font-bold text-white text-base">Pay & Order</Text>
+                <Feather name="shopping-cart" color="white" size={20} className="mr-2" />
+                <Text className="font-bold text-white text-base">Proceed to Checkout</Text>
               </>
             )}
           </TouchableOpacity>

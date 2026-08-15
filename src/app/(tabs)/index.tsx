@@ -6,7 +6,7 @@ import { useColorScheme } from 'nativewind';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
 import { useNotificationStore } from '../../hooks/useNotifications';
@@ -145,13 +145,13 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const q = query(
+      collection(db, 'blogs'),
+      where('status', '==', 'PUBLISHED')
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       try {
-        const q = query(
-          collection(db, 'blogs'),
-          where('status', '==', 'PUBLISHED')
-        );
-        const snapshot = await getDocs(q);
         const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         docs.sort((a: any, b: any) => {
           const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -160,13 +160,17 @@ export default function HomeScreen() {
         });
         setBlogPosts(docs.slice(0, 10));
       } catch (error: any) {
-        console.error("Error fetching blogs from Firestore:", error.message);
-        setBlogPosts([]);
+        console.error("Error processing blog snapshot:", error.message);
       } finally {
         setLoadingBlogs(false);
       }
-    };
-    fetchBlogs();
+    }, (error) => {
+      console.error("Error fetching blogs from Firestore:", error.message);
+      setBlogPosts([]);
+      setLoadingBlogs(false);
+    });
+
+    return () => unsubscribe();
   }, []);
   
   const cartCount = useCartStore((state) => state.items.reduce((total, item) => total + item.qty, 0));

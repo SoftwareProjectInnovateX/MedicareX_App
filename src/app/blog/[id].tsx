@@ -9,43 +9,145 @@ import { useAuth } from '../../context/AuthContext';
 import { db } from '../../services/firebase';
 import { doc, getDoc, updateDoc, increment, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 
-// Simple Markdown Renderer for React Native
-const SimpleMarkdown = ({ content }: { content: string }) => {
+// Enhanced Markdown Renderer for React Native
+const renderFormattedText = (text: string, isDark: boolean) => {
+  // Strip ALL stray '#' characters from regular text
+  let cleanText = text.replace(/#/g, '');
+  
+  // Split by bold (**text** or *text*)
+  const parts = cleanText.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+
+  const textColor = isDark ? '#e2e8f0' : '#334155'; // slate-200 : slate-700
+  const boldColor = isDark ? '#ffffff' : '#0f172a'; // white : slate-900
+
+  return (
+    <Text style={{ fontSize: 17, color: textColor, lineHeight: 28 }}>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <Text key={i} style={{ fontWeight: '900', color: boldColor }}>{part.slice(2, -2)}</Text>;
+        }
+        if (part.startsWith('*') && part.endsWith('*')) {
+          return <Text key={i} style={{ fontWeight: 'bold', color: boldColor }}>{part.slice(1, -1)}</Text>;
+        }
+        return <Text key={i}>{part}</Text>;
+      })}
+    </Text>
+  );
+};
+
+const SimpleMarkdown = ({ content, isDark }: { content: string, isDark: boolean }) => {
   if (!content) return null;
   
   // Clean AI artifacts
-  let cleaned = content.replace(/^\s*#\s+[^\n]+\n+/, '');
+  let cleaned = content.replace(/^\s*#\s+[^\n]+\n+/, ''); // Remove main title if it's there
   cleaned = cleaned.replace(/(\*?\*?Disclaimer:?[\s\S]*)/i, '');
   cleaned = cleaned.replace(/(\*?\*?Image\s?Prompt:?[\s\S]*)/i, '');
   
-  const paragraphs = cleaned.split('\n\n').filter(p => p.trim().length > 0);
+  const lines = cleaned.split('\n');
+  const blocks: any[] = [];
+  let currentList: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.length === 0) continue;
+
+    // Detect bullet points (- , * , •) and numbered lists (1. , 2. ) with optional spaces
+    const isListMatch = line.match(/^([-*•]|\d+\.)\s*(.*)/);
+
+    if (isListMatch && !line.startsWith('**')) {
+      currentList.push(line);
+    } else {
+      if (currentList.length > 0) {
+        blocks.push({ type: 'list', items: currentList });
+        currentList = [];
+      }
+      
+      let headingText = line;
+      let isHeading = false;
+      let level = 3;
+
+      let checkLine = line.replace(/^\*+/, '').trim(); // temporarily strip leading *
+      
+      if (checkLine.startsWith('#')) {
+        const match = checkLine.match(/^(#{1,6})\s*(.*)/);
+        if (match) {
+          isHeading = true;
+          level = match[1].length;
+          headingText = match[2];
+        }
+      } else if (line.startsWith('**') && (line.endsWith('**') || line.endsWith('**:') || line.endsWith(':**')) && line.length < 100) {
+        isHeading = true;
+        level = 2; // Treat bold lines as H2
+        headingText = line;
+      }
+
+      if (isHeading) {
+        blocks.push({ type: 'heading', level, text: headingText });
+      } else {
+        blocks.push({ type: 'paragraph', text: line });
+      }
+    }
+  }
+  if (currentList.length > 0) {
+    blocks.push({ type: 'list', items: currentList });
+  }
+
+  const boldColor = isDark ? '#ffffff' : '#0f172a';
   
   return (
-    <View className="mt-4">
-      {paragraphs.map((p, index) => {
-        const text = p.trim();
-        if (text.startsWith('# ')) {
-          return <Text key={index} className="text-3xl font-extrabold text-textPrimary dark:text-white mt-6 mb-4 leading-tight">{text.replace(/^# /, '').replace(/\*\*/g, '')}</Text>;
-        } else if (text.startsWith('## ')) {
-          return <Text key={index} className="text-2xl font-bold text-textPrimary dark:text-white mt-6 mb-3 leading-tight">{text.replace(/^## /, '').replace(/\*\*/g, '')}</Text>;
-        } else if (text.startsWith('### ')) {
-          return <Text key={index} className="text-xl font-bold text-textPrimary dark:text-white mt-4 mb-2 leading-tight">{text.replace(/^### /, '').replace(/\*\*/g, '')}</Text>;
-        } else if (text.startsWith('- ') || text.startsWith('* ')) {
-          // List
-          const items = text.split('\n');
+    <View style={{ marginTop: 8 }}>
+      {blocks.map((block, index) => {
+        if (block.type === 'heading') {
+          // Strip bold/colon marks for clean rendering
+          const headingText = block.text.replace(/\*/g, '').replace(/:$/, '').trim(); 
+          
+          if (block.level === 1 || block.level === 2) {
+             return (
+               <View key={index} style={{ marginTop: 24, marginBottom: 16 }}>
+                 <Text style={{ fontSize: 22, fontWeight: '900', color: boldColor, lineHeight: 28 }}>
+                   {headingText}
+                 </Text>
+               </View>
+             );
+          } else {
+             return (
+               <Text key={index} style={{ fontSize: 18, fontWeight: 'bold', color: boldColor, marginTop: 20, marginBottom: 12, lineHeight: 26 }}>
+                 {headingText}
+               </Text>
+             );
+          }
+        } else if (block.type === 'list') {
           return (
-            <View key={index} className="mb-4 ml-2">
-              {items.map((item, i) => (
-                <View key={i} className="flex-row mb-2 pr-4">
-                  <Text className="text-textPrimary dark:text-white mr-2 text-lg">•</Text>
-                  <Text className="text-base text-textSecondary dark:text-gray-300 leading-relaxed flex-1">{item.replace(/^[-*] /, '').replace(/\*\*/g, '')}</Text>
-                </View>
-              ))}
+            <View key={index} style={{ marginBottom: 20, paddingLeft: 8 }}>
+              {block.items.map((item: string, i: number) => {
+                const isNumbered = /^\d+\./.test(item);
+                const numberMatch = item.match(/^(\d+)\./);
+                const num = numberMatch ? numberMatch[1] : '';
+                
+                // Strip the bullet/number from text
+                const itemText = item.replace(/^([-*•]|\d+\.)\s*/, '');
+                
+                return (
+                  <View key={i} style={{ flexDirection: 'row', marginBottom: 12 }}>
+                    {isNumbered ? (
+                      <Text style={{ fontSize: 17, fontWeight: 'bold', color: boldColor, width: 24, textAlign: 'left' }}>{num}.</Text>
+                    ) : (
+                      <Text style={{ fontSize: 17, fontWeight: '900', color: boldColor, width: 20, textAlign: 'left' }}>•</Text>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      {renderFormattedText(itemText, isDark)}
+                    </View>
+                  </View>
+                );
+              })}
             </View>
           );
         } else {
-          const cleanText = text.replace(/\*\*/g, '');
-          return <Text key={index} className="text-base text-textSecondary dark:text-gray-300 mb-4 leading-relaxed">{cleanText}</Text>;
+          return (
+            <View key={index} style={{ marginBottom: 16 }}>
+              {renderFormattedText(block.text, isDark)}
+            </View>
+          );
         }
       })}
     </View>
@@ -259,7 +361,7 @@ export default function BlogDetailScreen() {
           </View>
 
           {/* Article Content */}
-          <SimpleMarkdown content={blog.content} />
+          <SimpleMarkdown content={blog.content} isDark={colorScheme === 'dark'} />
 
           {/* Medical Disclaimer */}
           <View className="mt-12 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">

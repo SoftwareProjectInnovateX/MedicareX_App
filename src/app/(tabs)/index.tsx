@@ -9,6 +9,7 @@ import Constants from 'expo-constants';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useCartStore } from '../../stores/cartStore';
+import { useNotificationStore } from '../../hooks/useNotifications';
 import Footer from '../../components/Footer';
 import { useLocationStore } from '../../stores/locationStore';
 import { CATEGORIES } from '../../constants/categories';
@@ -168,8 +169,8 @@ export default function HomeScreen() {
     fetchBlogs();
   }, []);
   
-  const cartItems = useCartStore(state => state.items);
-  const cartCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
+  const cartCount = useCartStore((state) => state.items.reduce((total, item) => total + item.qty, 0));
+  const unreadNotifsCount = useNotificationStore((state) => state.unreadCount);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -260,8 +261,13 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={toggleColorScheme} className="mr-3">
             <Feather name={colorScheme === 'dark' ? 'sun' : 'moon'} color={colorScheme === 'dark' ? '#f1f5f9' : '#1E293B'} size={24} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/notifications')} className="mr-3">
+          <TouchableOpacity onPress={() => router.push('/notifications')} className="mr-3 relative">
             <Feather name="bell" color={colorScheme === 'dark' ? '#f1f5f9' : '#1E293B'} size={24} />
+            {unreadNotifsCount > 0 && (
+              <View className="absolute -top-1 -right-1 bg-red-500 w-4 h-4 rounded-full items-center justify-center">
+                <Text className="text-white text-[10px] font-bold">{unreadNotifsCount > 9 ? '9+' : unreadNotifsCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/cart')} className="relative">
             <Feather name="shopping-cart" color={colorScheme === 'dark' ? '#f1f5f9' : '#1E293B'} size={24} />

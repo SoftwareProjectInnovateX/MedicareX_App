@@ -12,12 +12,15 @@ import { useAuth } from '../context/AuthContext';
 // SplashScreen.preventAutoHideAsync();
 
 import { useCartStore } from '../stores/cartStore';
+import { useNotificationListener } from '../hooks/useNotifications';
 
 export default function RootLayout() {
   return (
     <AuthProvider>
       <CartInitializer>
-        <RootLayoutInner />
+        <NotificationInitializer>
+          <RootLayoutInner />
+        </NotificationInitializer>
       </CartInitializer>
     </AuthProvider>
   );
@@ -35,6 +38,11 @@ function CartInitializer({ children }: { children: React.ReactNode }) {
     }
   }, [user, fetchItems]);
 
+  return <>{children}</>;
+}
+
+function NotificationInitializer({ children }: { children: React.ReactNode }) {
+  useNotificationListener();
   return <>{children}</>;
 }
 

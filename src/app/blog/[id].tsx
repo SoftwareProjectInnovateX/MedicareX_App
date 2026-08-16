@@ -192,7 +192,10 @@ export default function BlogDetailScreen() {
         const docRef = doc(db, 'blogs', id as string);
         const docSnap = await getDoc(docRef);
         if (!docSnap.exists()) throw new Error("Not found");
+        
         const data = docSnap.data();
+        if (data.status !== 'PUBLISHED') throw new Error("Not published");
+        
         setBlog({ id: docSnap.id, ...data });
         setLikes(data.likes || 0);
         

@@ -145,13 +145,13 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'blogs'),
-      where('status', '==', 'PUBLISHED')
-    );
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const fetchBlogs = async () => {
       try {
+        const q = query(
+          collection(db, 'blogs'),
+          where('status', '==', 'PUBLISHED')
+        );
+        const snapshot = await getDocs(q);
         const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         docs.sort((a: any, b: any) => {
           const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -160,17 +160,14 @@ export default function HomeScreen() {
         });
         setBlogPosts(docs.slice(0, 10));
       } catch (error: any) {
-        console.error("Error processing blog snapshot:", error.message);
+        console.error("Error fetching blogs from Firestore:", error.message);
+        setBlogPosts([]);
       } finally {
         setLoadingBlogs(false);
       }
-    }, (error) => {
-      console.error("Error fetching blogs from Firestore:", error.message);
-      setBlogPosts([]);
-      setLoadingBlogs(false);
-    });
-
-    return () => unsubscribe();
+    };
+    
+    fetchBlogs();
   }, []);
   
   const cartCount = useCartStore((state) => state.items.reduce((total, item) => total + item.qty, 0));

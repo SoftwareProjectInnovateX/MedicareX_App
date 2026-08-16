@@ -1,7 +1,8 @@
 require('dotenv').config();
 const { initializeApp } = require('firebase/app');
-const { getFirestore, collection, addDoc } = require('firebase/firestore');
+const { getFirestore, collection, addDoc, query, where, getDocs, updateDoc, doc, onSnapshot } = require('firebase/firestore');
 const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } = require('firebase/auth');
+const cron = require('node-cron');
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -33,7 +34,7 @@ const PROMPT_TOPICS = [
 ];
 
 async function generateAndPostBlog() {
-  console.log(`[${new Date().toLocaleTimeString()}] Generating new health blog...`);
+  console.log(`[${new Date().toLocaleTimeString()}] Generating new health blog for Pharmacist Approval...`);
   
   if (!GROQ_API_KEY) {
     console.error("ERROR: EXPO_PUBLIC_GROQ_API_KEY is not set in .env file.");
@@ -101,16 +102,36 @@ Requirements:
       content,
       imageUrl: imageUrl,
       fallbackImageUrl: imageUrl,
-      status: "PUBLISHED",
+      status: "PENDING", // PENDING for pharmacist approval
       likes: 0,
       createdAt: new Date().toISOString()
     };
 
     const docRef = await addDoc(collection(db, 'blogs'), blogPost);
-    console.log(`[${new Date().toLocaleTimeString()}] ✅ Successfully published blog: "${title}" (ID: ${docRef.id})`);
+    console.log(`[${new Date().toLocaleTimeString()}] ✅ Successfully generated blog: "${title}" (ID: ${docRef.id}) [Status: PENDING]`);
     
   } catch (error) {
     console.error(`[${new Date().toLocaleTimeString()}] ❌ Failed to generate or post blog:`, error.message);
+  }
+}
+
+async function publishApprovedBlogs() {
+  console.log(`[${new Date().toLocaleTimeString()}] Checking for APPROVED blogs to PUBLISH...`);
+  try {
+    const q = query(collection(db, 'blogs'), where('status', '==', 'APPROVED'));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      console.log("No APPROVED blogs found to publish.");
+      return;
+    }
+
+    for (const document of snapshot.docs) {
+      await updateDoc(doc(db, 'blogs', document.id), { status: 'PUBLISHED' });
+      console.log(`✅ Published blog ID: ${document.id}`);
+    }
+  } catch (error) {
+    console.error("❌ Error publishing approved blogs:", error);
   }
 }
 
@@ -129,12 +150,42 @@ async function startGenerator() {
       console.log("✅ Bot account created and authenticated!");
     }
 
-    // Generate the first one immediately, then every 2 minutes
-    generateAndPostBlog();
-    const INTERVAL_MS = 2 * 60 * 1000; 
-    setInterval(generateAndPostBlog, INTERVAL_MS);
+    // 1. Generate at 6:00 PM every day
+    cron.schedule('0 18 * * *', () => {
+      console.log("⏰ 6:00 PM - Triggering auto blog generation...");
+      generateAndPostBlog();
+    });
 
-    console.log("🚀 Auto-blog generator started! Running every 2 minutes with Groq AI.");
+    // 2. Publish Approved blogs at 12:00 AM (Midnight) every day
+    cron.schedule('0 0 * * *', () => {
+      console.log("⏰ 12:00 AM - Triggering midnight publishing...");
+      publishApprovedBlogs();
+    });
+
+    // 3. Listen for REJECTED blogs in real-time
+    const qRejected = query(collection(db, 'blogs'), where('status', '==', 'REJECTED'));
+    onSnapshot(qRejected, (snapshot) => {
+      snapshot.docChanges().forEach(async (change) => {
+        if (change.type === 'added') {
+          console.log(`❌ Blog ID: ${change.doc.id} was REJECTED by Pharmacist! Regenerating new one...`);
+          
+          // Generate a new one immediately
+          await generateAndPostBlog();
+          
+          // Archive the rejected one to prevent infinite loops
+          await updateDoc(doc(db, 'blogs', change.doc.id), { status: 'ARCHIVED' });
+          console.log(`📦 Archived rejected blog ID: ${change.doc.id}`);
+        }
+      });
+    }, (error) => {
+      console.error("❌ Error in Rejection Listener:", error);
+    });
+
+    console.log("🚀 Auto-blog daemon started successfully! Listening for schedule and rejections...");
+    
+    // Generate the first one immediately if testing
+    // generateAndPostBlog(); 
+
   } catch (error) {
     console.error("Authentication failed:", error.message);
   }

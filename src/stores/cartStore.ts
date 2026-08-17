@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 import { db } from '../services/firebase';
-import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch, increment, query, where, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch, increment, query, where, updateDoc, runTransaction } from 'firebase/firestore';
 
 const getCustomerId = async () => {
   return await AsyncStorage.getItem("userId") ?? null;
@@ -13,17 +14,34 @@ const normalizeProductId = (product: any) => {
 
 const updateProductStock = async (stockId: string, delta: number) => {
   if (!stockId) return;
-  try {
-    const q = query(collection(db, 'products'), where('productCode', '==', stockId));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      const docId = snap.docs[0].id;
-      await updateDoc(doc(db, 'products', docId), { stock: increment(delta) });
+  
+  const q = query(collection(db, 'products'), where('productCode', '==', stockId));
+  const snap = await getDocs(q);
+  
+  if (!snap.empty) {
+    const docRef = doc(db, 'products', snap.docs[0].id);
+    
+    if (delta < 0) {
+      // Decreasing stock (adding to cart) -> use transaction to prevent negative stock
+      await runTransaction(db, async (transaction) => {
+        const productDoc = await transaction.get(docRef);
+        if (!productDoc.exists()) throw new Error("Product does not exist!");
+        
+        const currentStock = productDoc.data().stock || 0;
+        if (currentStock + delta < 0) {
+          throw new Error("INSUFFICIENT_STOCK");
+        }
+        transaction.update(docRef, { stock: currentStock + delta });
+      });
     } else {
-      await setDoc(doc(db, 'products', stockId), { stock: increment(delta) }, { merge: true });
+      // Restoring stock
+      await updateDoc(docRef, { stock: increment(delta) });
     }
-  } catch (err) {
-    console.error("Error updating stock globally", err);
+  } else {
+    // If product doesn't exist but we're restoring stock (edge case)
+    if (delta > 0) {
+      await setDoc(doc(db, 'products', stockId), { stock: delta }, { merge: true });
+    }
   }
 };
 
@@ -44,7 +62,7 @@ interface CartStore {
   fetchItems: () => Promise<void>;
   addItem: (product: any, delta?: number) => Promise<void>;
   removeItem: (firestoreId: string) => Promise<void>;
-  clearCart: () => Promise<void>;
+  clearCart: (restoreStock?: boolean) => Promise<void>;
   getTotal: () => number;
 }
 
@@ -75,6 +93,20 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
     if (existing) {
       const newQty = existing.qty + delta;
+
+      // Adjust actual stock FIRST
+      try {
+        if (existing.stockId) {
+          await updateProductStock(existing.stockId, -delta);
+        }
+      } catch (err: any) {
+        if (err.message === "INSUFFICIENT_STOCK") {
+          Alert.alert("Stock Limit Reached", "Sorry, there is not enough stock available for this product.");
+        } else {
+          console.error("Stock deduction failed:", err);
+        }
+        return;
+      }
       
       set((state) => ({
         items: state.items
@@ -92,11 +124,6 @@ export const useCartStore = create<CartStore>((set, get) => ({
           await deleteDoc(itemRef);
         } else {
           await setDoc(itemRef, { qty: newQty }, { merge: true });
-        }
-        
-        // Adjust actual stock
-        if (existing.stockId) {
-          await updateProductStock(existing.stockId, -delta);
         }
       } catch (err) {
         console.error("updateQty error:", err);
@@ -120,17 +147,26 @@ export const useCartStore = create<CartStore>((set, get) => ({
       qty: initialQty,
     };
 
+    // Deduct stock FIRST
+    try {
+      if (newItem.stockId) {
+        await updateProductStock(newItem.stockId, -initialQty);
+      }
+    } catch (err: any) {
+      if (err.message === "INSUFFICIENT_STOCK") {
+        Alert.alert("Out of Stock", "Sorry, this product is currently out of stock or you've reached the limit.");
+      } else {
+        console.error("Stock deduction failed:", err);
+      }
+      return;
+    }
+
     set((state) => ({ items: [...state.items, newItem] }));
 
     try {
       const itemRef = doc(db, 'users', customerId, 'cart', productId);
       const finalItem = { ...newItem, id: productId };
       await setDoc(itemRef, finalItem);
-      
-      // Deduct stock for new item
-      if (newItem.stockId) {
-        await updateProductStock(newItem.stockId, -initialQty);
-      }
 
       set((state) => ({ 
         items: state.items.map(i => i.id === tempId ? finalItem : i) 
@@ -138,6 +174,15 @@ export const useCartStore = create<CartStore>((set, get) => ({
     } catch (err) {
       console.error("addItem error:", err);
       set((state) => ({ items: state.items.filter(i => i.id !== tempId) }));
+      
+      // If adding to cart failed, we should restore the stock!
+      try {
+        if (newItem.stockId) {
+          await updateProductStock(newItem.stockId, initialQty);
+        }
+      } catch (restoreErr) {
+        console.error("Failed to restore stock after cart add error:", restoreErr);
+      }
     }
   },
 

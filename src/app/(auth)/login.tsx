@@ -17,7 +17,7 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
+    clientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
     webClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
     androidClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
     iosClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
@@ -139,6 +139,9 @@ export default function LoginScreen() {
                 <Feather name={showPassword ? "eye" : "eye-off"} size={20} color="gray" />
               </TouchableOpacity>
             </View>
+            <TouchableOpacity onPress={handleForgotPassword} className="mt-3 self-end">
+               <Text className="text-blue-500 font-bold text-sm">Forgot Password?</Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity 

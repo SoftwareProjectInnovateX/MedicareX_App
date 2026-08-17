@@ -46,79 +46,85 @@ export default function ProductsScreen() {
     }
   }, [initialCategory]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      if (user) {
-        fetchProducts();
-      } else {
-        setLoading(false);
+  useEffect(() => {
+    let isActive = true;
+    let unsubscribeStock: (() => void) | undefined;
+
+    const initData = async () => {
+      setLoading(true);
+      try {
+        const q = query(collection(db, 'pharmacistProducts'), where('visibility', '==', 'customer'));
+        const snapshot = await getDocs(q);
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (!isActive) return;
+
+        // Fetch stock in real-time
+        unsubscribeStock = onSnapshot(collection(db, 'products'), (stockSnap) => {
+          const stockMap: Record<string, number> = {};
+          stockSnap.forEach(doc => {
+            const d = doc.data();
+            const s = typeof d.stock === 'number' && !isNaN(d.stock) ? d.stock : 0;
+            
+            if (stockMap[doc.id] === undefined) {
+              stockMap[doc.id] = s;
+            }
+            if (d.productCode) {
+              stockMap[d.productCode] = s;
+            }
+          });
+
+          setProducts(prev => {
+            const source = prev.length > 0 ? prev : items;
+            return source.map(p => ({
+              ...p,
+              stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? (p as any).stock ?? 0
+            }));
+          });
+        });
+
+        // Fetch ratings
+        const ratingsSnapshot = await getDocs(collection(db, 'productRatings'));
+        const ratingsMap: Record<string, { sum: number, count: number }> = {};
+        
+        ratingsSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.productId && data.rating > 0) {
+            const pid = String(data.productId);
+            if (!ratingsMap[pid]) ratingsMap[pid] = { sum: 0, count: 0 };
+            ratingsMap[pid].sum += data.rating;
+            ratingsMap[pid].count += 1;
+          }
+        });
+
+        const finalRatings: Record<string, {avg: number, count: number}> = {};
+        Object.keys(ratingsMap).forEach(key => {
+          finalRatings[key] = {
+            avg: ratingsMap[key].sum / ratingsMap[key].count,
+            count: ratingsMap[key].count
+          };
+        });
+        
+        if (isActive) setProductRatings(finalRatings);
+
+      } catch (error) {
+        console.error("Error fetching products", error);
+      } finally {
+        if (isActive) setLoading(false);
       }
-    }, [user])
-  );
+    };
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const q = query(collection(db, 'pharmacistProducts'), where('visibility', '==', 'customer'));
-      const snapshot = await getDocs(q);
-      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      // Fetch stock in real-time
-      const unsubscribeStock = onSnapshot(collection(db, 'products'), (stockSnap) => {
-        const stockMap: Record<string, number> = {};
-        stockSnap.forEach(doc => {
-          const d = doc.data();
-          const s = typeof d.stock === 'number' && !isNaN(d.stock) ? d.stock : 0;
-          
-          if (stockMap[doc.id] === undefined) {
-            stockMap[doc.id] = s;
-          }
-          if (d.productCode) {
-            stockMap[d.productCode] = s;
-          }
-        });
-
-        setProducts(prev => {
-          // If prev is empty, map from items, else map from prev
-          const source = prev.length > 0 ? prev : items;
-          return source.map(p => ({
-            ...p,
-            stock: stockMap[(p as any).stockId] ?? stockMap[(p as any).productCode] ?? (p as any).stock ?? 0
-          }));
-        });
-      });
-
-      // Cleanup not strictly managed here for simplicity since it mounts on focus,
-      // but the UI will update in real-time while mounted.
-
-      // Fetch ratings
-      const ratingsSnapshot = await getDocs(collection(db, 'productRatings'));
-      const ratingsMap: Record<string, { sum: number, count: number }> = {};
-      
-      ratingsSnapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.productId && data.rating > 0) {
-          const pid = String(data.productId);
-          if (!ratingsMap[pid]) ratingsMap[pid] = { sum: 0, count: 0 };
-          ratingsMap[pid].sum += data.rating;
-          ratingsMap[pid].count += 1;
-        }
-      });
-
-      const finalRatings: Record<string, {avg: number, count: number}> = {};
-      Object.keys(ratingsMap).forEach(key => {
-        finalRatings[key] = {
-          avg: ratingsMap[key].sum / ratingsMap[key].count,
-          count: ratingsMap[key].count
-        };
-      });
-      setProductRatings(finalRatings);
-    } catch (error) {
-      console.error("Error fetching products", error);
-    } finally {
+    if (user) {
+      initData();
+    } else {
       setLoading(false);
     }
-  };
+
+    return () => {
+      isActive = false;
+      if (unsubscribeStock) unsubscribeStock();
+    };
+  }, [user]);
 
   React.useEffect(() => {
     let result = [...products];

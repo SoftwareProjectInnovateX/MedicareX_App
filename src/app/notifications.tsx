@@ -13,6 +13,7 @@ export default function NotificationsScreen() {
   
   const notifications = useNotificationStore(s => s.notifications);
   const markAsRead = useNotificationStore(s => s.markAsRead);
+  const clearNotifications = useNotificationStore(s => s.clearNotifications);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -35,11 +36,18 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-primary dark:bg-gray-900">
-      <View className="flex-row items-center p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-textPrimary dark:text-white">Notifications</Text>
+      <View className="flex-row items-center justify-between p-4 border-b border-[#e5e7eb] dark:border-gray-700 bg-white dark:bg-gray-800">
+        <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => router.back()} className="mr-4">
+            <Feather name="arrow-left" size={24} color={colorScheme === 'dark' ? '#FFFFFF' : '#0f2a5e'} />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold text-textPrimary dark:text-white">Notifications</Text>
+        </View>
+        {notifications.length > 0 && (
+          <TouchableOpacity onPress={() => clearNotifications(user?.uid)} className="bg-red-50 dark:bg-red-900/30 px-3 py-1.5 rounded-full">
+            <Text className="text-red-600 dark:text-red-400 text-xs font-bold">Clear All</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {loading ? (

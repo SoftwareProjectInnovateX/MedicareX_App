@@ -9,9 +9,11 @@ interface NotificationStore {
   notifications: any[];
   unreadCount: number;
   lastViewedTime: number;
+  clearedAt: number;
   setNotifications: (notifs: any[]) => void;
   updateNotifications: (prefix: string, notifs: any[]) => void;
   markAsRead: () => void;
+  clearNotifications: () => Promise<void>;
   initLastViewed: () => Promise<void>;
 }
 
@@ -19,14 +21,20 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   notifications: [],
   unreadCount: 0,
   lastViewedTime: 0,
+  clearedAt: 0,
   setNotifications: (notifs) => {
-    const unread = notifs.filter(n => n.time > get().lastViewedTime).length;
-    set({ notifications: notifs, unreadCount: unread });
+    const validNotifs = notifs.filter(n => n.time > get().clearedAt);
+    const unread = validNotifs.filter(n => n.time > get().lastViewedTime).length;
+    set({ notifications: validNotifs, unreadCount: unread });
   },
   updateNotifications: (prefix, notifs) => {
     const prev = get().notifications;
     const filtered = prev.filter(n => !n.id.startsWith(prefix));
-    const combined = [...filtered, ...notifs].sort((a, b) => b.time - a.time);
+    
+    // Filter out notifications older than clearedAt
+    const validNotifs = notifs.filter(n => n.time > get().clearedAt);
+    const combined = [...filtered, ...validNotifs].sort((a, b) => b.time - a.time);
+    
     const unread = combined.filter(n => n.time > get().lastViewedTime).length;
     set({ notifications: combined, unreadCount: unread });
   },
@@ -35,12 +43,23 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     await AsyncStorage.setItem('lastViewedNotifs', now.toString());
     set({ lastViewedTime: now, unreadCount: 0 });
   },
-  initLastViewed: async () => {
+  clearNotifications: async (userId?: string) => {
+    const now = Date.now();
+    const key = userId ? `notificationsClearedAt_${userId}` : 'notificationsClearedAt';
+    await AsyncStorage.setItem(key, now.toString());
+    set({ notifications: [], unreadCount: 0, clearedAt: now });
+  },
+  initLastViewed: async (userId?: string) => {
     try {
       const time = await AsyncStorage.getItem('lastViewedNotifs');
       if (time) set({ lastViewedTime: parseInt(time) });
+      
+      const key = userId ? `notificationsClearedAt_${userId}` : 'notificationsClearedAt';
+      const cleared = await AsyncStorage.getItem(key);
+      if (cleared) set({ clearedAt: parseInt(cleared) });
+      else set({ clearedAt: 0 }); // reset if no key found for this user
     } catch (err) {
-      console.log('Failed to get last viewed time:', err);
+      console.log('Failed to get notification state from storage:', err);
     }
   }
 }));
@@ -52,8 +71,8 @@ export function useNotificationListener() {
   const initLastViewed = useNotificationStore(s => s.initLastViewed);
 
   useEffect(() => {
-    initLastViewed();
-  }, []);
+    initLastViewed(user?.uid);
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!user?.uid) {

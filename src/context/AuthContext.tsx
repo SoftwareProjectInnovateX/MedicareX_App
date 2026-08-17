@@ -76,6 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         status:    'active',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
+        loyaltyPoints: 10,
+        loyaltyTier: 'Silver',
       };
 
       console.log('Register step 5: setting user doc');
@@ -129,10 +131,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log('Login step 5: updating last login');
-      await setDoc(doc(db, 'users', loggedInUser.uid), {
-        ...userData,
-        lastLogin: Timestamp.now()
-      }, { merge: true });
+      
+      // Retroactive loyalty points for existing users
+      let updatedData = { ...userData, lastLogin: Timestamp.now() };
+      if (userData.loyaltyPoints === undefined) {
+        updatedData.loyaltyPoints = 10;
+        updatedData.loyaltyTier = 'Silver';
+      }
+
+      await setDoc(doc(db, 'users', loggedInUser.uid), updatedData, { merge: true });
 
       console.log('Login step 6: setting async storage');
       await AsyncStorage.setItem('userId', loggedInUser.uid);
@@ -201,6 +208,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       phone: loggedInUser.phoneNumber || '',
       role: 'customer',
       status: 'active',
+      loyaltyPoints: 10,
+      loyaltyTier: 'Silver',
     };
 
     if (!userDoc.exists()) {
@@ -230,6 +239,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Only customers can log in to this app.');
       }
       userData = { ...existingData, lastLogin: Timestamp.now() };
+      if (existingData.loyaltyPoints === undefined) {
+        userData.loyaltyPoints = 10;
+        userData.loyaltyTier = 'Silver';
+      }
       await setDoc(userDocRef, userData, { merge: true });
     }
 
@@ -264,7 +277,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await signOut(auth);
-      await AsyncStorage.clear();
+      await AsyncStorage.removeItem('userId');
+      await AsyncStorage.removeItem('userRole');
+      await AsyncStorage.removeItem('userName');
+      await AsyncStorage.removeItem('userEmail');
       setUser(null);
       setCurrentUser(null);
       setUserRole(null);
@@ -304,6 +320,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (storedRole === 'customer') {
             setUserRole(storedRole);
             setLoading(false);
+            
+            // Background check for loyalty points
+            try {
+              const userDoc = await getDoc(doc(db, 'users', authenticatedUser.uid));
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                if (userData.loyaltyPoints === undefined) {
+                  await setDoc(doc(db, 'users', authenticatedUser.uid), {
+                    loyaltyPoints: 10,
+                    loyaltyTier: 'Silver'
+                  }, { merge: true });
+                }
+              }
+            } catch (err) {
+              console.log('Background loyalty check failed:', err);
+            }
             return;
           }
           
@@ -311,8 +343,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userDoc = await getDoc(doc(db, 'users', authenticatedUser.uid));
             if (userDoc.exists()) {
               if (userDoc.data().role === 'customer') {
-                const userData = userDoc.data();
+                let userData = userDoc.data();
                 setUserRole('customer');
+                
+                // Check loyalty points
+                if (userData.loyaltyPoints === undefined) {
+                  userData.loyaltyPoints = 10;
+                  userData.loyaltyTier = 'Silver';
+                  await setDoc(doc(db, 'users', authenticatedUser.uid), {
+                    loyaltyPoints: 10,
+                    loyaltyTier: 'Silver'
+                  }, { merge: true });
+                }
+
                 await AsyncStorage.setItem('userId', authenticatedUser.uid);
                 await AsyncStorage.setItem('userRole', 'customer');
                 await AsyncStorage.setItem('userName', userData.fullName || '');

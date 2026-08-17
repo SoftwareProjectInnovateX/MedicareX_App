@@ -33,10 +33,55 @@ export default function ProductDetailScreen() {
   };
 
   useEffect(() => {
+    let unsubscribeStockQ: (() => void) | undefined;
+    let unsubscribeStockDoc: (() => void) | undefined;
+
+    const fetchProductDetails = async () => {
+      try {
+        const docRef = doc(db, 'pharmacistProducts', id as string);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const productData = docSnap.data();
+          const stockId = productData.stockId || productData.productCode;
+          
+          // Initial set without stock
+          setProduct({ id: docSnap.id, ...productData, stock: 0 });
+          
+          // Listen to actual stock from 'products' collection in real-time
+          if (stockId) {
+            const stockQ = query(collection(db, 'products'), where('productCode', '==', stockId));
+            unsubscribeStockQ = onSnapshot(stockQ, (querySnapshot) => {
+              if (!querySnapshot.empty) {
+                setProduct((prev: any) => prev ? { ...prev, stock: querySnapshot.docs[0].data().stock ?? 0 } : prev);
+              } else {
+                // Fallback to direct document id check just in case
+                unsubscribeStockDoc = onSnapshot(doc(db, 'products', stockId), (stockDoc) => {
+                  if (stockDoc.exists()) {
+                    setProduct((prev: any) => prev ? { ...prev, stock: stockDoc.data().stock ?? 0 } : prev);
+                  }
+                });
+              }
+            });
+          }
+        } else {
+          console.log("No such product!");
+        }
+      } catch (error) {
+        console.error("Error fetching product", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (id) {
       fetchProductDetails();
       fetchReviews();
     }
+
+    return () => {
+      if (unsubscribeStockQ) unsubscribeStockQ();
+      if (unsubscribeStockDoc) unsubscribeStockDoc();
+    };
   }, [id]);
 
   const fetchReviews = async () => {
@@ -110,42 +155,7 @@ export default function ProductDetailScreen() {
     }
   };
 
-  const fetchProductDetails = async () => {
-    try {
-      const docRef = doc(db, 'pharmacistProducts', id as string);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const productData = docSnap.data();
-        const stockId = productData.stockId || productData.productCode;
-        
-        // Initial set without stock
-        setProduct({ id: docSnap.id, ...productData, stock: 0 });
-        
-        // Listen to actual stock from 'products' collection in real-time
-        if (stockId) {
-          const stockQ = query(collection(db, 'products'), where('productCode', '==', stockId));
-          const unsubscribe = onSnapshot(stockQ, (querySnapshot) => {
-            if (!querySnapshot.empty) {
-              setProduct((prev: any) => ({ ...prev, stock: querySnapshot.docs[0].data().stock ?? 0 }));
-            } else {
-              // Fallback to direct document id check just in case
-              onSnapshot(doc(db, 'products', stockId), (stockDoc) => {
-                if (stockDoc.exists()) {
-                  setProduct((prev: any) => ({ ...prev, stock: stockDoc.data().stock ?? 0 }));
-                }
-              });
-            }
-          });
-        }
-      } else {
-        console.log("No such product!");
-      }
-    } catch (error) {
-      console.error("Error fetching product", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   if (loading) {
     return (

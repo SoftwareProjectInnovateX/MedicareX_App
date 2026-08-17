@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 // @ts-ignore
 import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/auth";
@@ -21,7 +21,15 @@ const firebaseConfig = {
 export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize services
-export const db = getFirestore(app);
+let firestoreDb;
+try {
+  firestoreDb = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+  });
+} catch (e) {
+  firestoreDb = getFirestore(app);
+}
+export const db = firestoreDb;
 export const storage = getStorage(app);
 
 let firebaseAuth;

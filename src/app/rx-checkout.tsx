@@ -26,6 +26,7 @@ export default function RxCheckoutScreen() {
     houseNumber: '',
     laneStreet: '',
     phone: (user as any)?.phone || '',
+
     secondaryPhone: '',
     orderNotes: '',
     paymentMethod: 'ONLINE', // or 'COD'
@@ -34,6 +35,10 @@ export default function RxCheckoutScreen() {
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const [availablePoints, setAvailablePoints] = useState(0);
+  const [redeemedPoints, setRedeemedPoints] = useState('');
+  const [pointsError, setPointsError] = useState('');
   
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [saveAddressToBook, setSaveAddressToBook] = useState(false);
@@ -59,6 +64,7 @@ export default function RxCheckoutScreen() {
               laneStreet: prev.laneStreet || data.laneStreet || '',
               phone: prev.phone || data.phone || '',
             }));
+            setAvailablePoints(data.loyaltyPoints || 0);
             
             if (data.savedAddresses && Array.isArray(data.savedAddresses)) {
               setSavedAddresses(data.savedAddresses);
@@ -72,9 +78,24 @@ export default function RxCheckoutScreen() {
     fetchUserData();
   }, [user]);
 
-  const subtotal = parseFloat(amount || '0');
+  const subtotal = Number(amount) || 0;
   const shippingCharge = 400;
-  const totalAmount = subtotal + shippingCharge;
+  
+  const parsedRedeemed = Number(redeemedPoints) || 0;
+  const totalAmount = Math.max(0, subtotal + shippingCharge - parsedRedeemed);
+
+  const handleRedeemedPointsChange = (text: string) => {
+    const val = text.replace(/[^0-9]/g, '');
+    setRedeemedPoints(val);
+    const num = Number(val);
+    if (num > availablePoints) {
+      setPointsError(`You only have ${availablePoints} points available.`);
+    } else if (num > subtotal + shippingCharge) {
+      setPointsError(`Cannot redeem more than the total bill amount.`);
+    } else {
+      setPointsError('');
+    }
+  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -115,6 +136,16 @@ export default function RxCheckoutScreen() {
       return;
     }
 
+    if (!rxId) {
+      Alert.alert('Error', 'Invalid prescription order.');
+      return;
+    }
+
+    if (pointsError) {
+      Alert.alert('Error', 'Please fix the points redemption error.');
+      return;
+    }
+
     if (!validateForm()) {
       Alert.alert('Error', 'Please fill in all required fields correctly.');
       return;
@@ -150,6 +181,7 @@ export default function RxCheckoutScreen() {
         totalAmount: totalAmount,
         subtotal: subtotal,
         shippingCharge: shippingCharge,
+        redeemedPoints: parsedRedeemed,
         totalnumber: items.length,
         items: items.map((item: any) => ({
           id: item.productId || item.id || '',
@@ -188,8 +220,11 @@ export default function RxCheckoutScreen() {
       }
 
       if (formData.paymentMethod === 'COD') {
+        const batch = writeBatch(db);
+        
+        // 1. Update prescription doc
         const rxRef = doc(db, 'prescriptions', rxId as string);
-        await updateDoc(rxRef, {
+        batch.update(rxRef, {
           status: 'Ready to Collect',
           customerConfirmed: true,
           paymentMethod: 'COD',
@@ -198,6 +233,18 @@ export default function RxCheckoutScreen() {
           customerName: orderData.customerName,
           customerPhone: orderData.phone
         });
+        
+        // 2. Create order doc
+        const newOrderRef = doc(collection(db, 'CustomerOrders'));
+        batch.set(newOrderRef, orderData);
+
+        // 3. Update points
+        if (parsedRedeemed > 0 && user?.uid) {
+          const userRef = doc(db, 'users', user.uid);
+          batch.update(userRef, { loyaltyPoints: increment(-parsedRedeemed) });
+        }
+
+        await batch.commit();
 
         const dispensePayload = {
           rxId: rxId,
@@ -520,6 +567,29 @@ export default function RxCheckoutScreen() {
             </View>
 
             <View className="border-t border-slate-200 dark:border-gray-700 py-4">
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-slate-800 dark:text-gray-300 font-medium flex-row items-center">
+                  <Feather name="award" size={16} color="#1a87e1" /> <Text className="ml-1">Use Loyalty Points</Text>
+                </Text>
+                <Text className="text-xs font-bold text-blue-600">Available: {availablePoints}</Text>
+              </View>
+              <TextInput
+                className={`bg-slate-50 dark:bg-gray-800 p-3 rounded-xl border ${pointsError ? 'border-red-500' : 'border-slate-200 dark:border-gray-700'} text-slate-800 dark:text-white`}
+                placeholder="Enter points to redeem"
+                placeholderTextColor="#94a3b8"
+                keyboardType="numeric"
+                value={redeemedPoints}
+                onChangeText={handleRedeemedPointsChange}
+              />
+              {pointsError ? (
+                <Text className="text-red-500 text-xs mt-1 font-bold">{pointsError}</Text>
+              ) : null}
+              {parsedRedeemed > 0 && !pointsError ? (
+                <Text className="text-emerald-600 text-xs mt-1 font-bold">- Rs. {parsedRedeemed.toFixed(2)} will be deducted</Text>
+              ) : null}
+            </View>
+
+            <View className="border-t border-slate-200 dark:border-gray-700 py-4">
               <Text className="mb-4 text-blue-900 dark:text-blue-400 font-bold uppercase text-[10px] tracking-widest">Select Payment Method</Text>
               
               <TouchableOpacity 
@@ -551,7 +621,12 @@ export default function RxCheckoutScreen() {
 
             <View className="border-t border-slate-200 dark:border-gray-700 py-6 flex-row justify-between items-center">
               <Text className="text-2xl font-black text-blue-900 dark:text-blue-400">Total</Text>
-              <Text className="text-2xl font-black text-blue-900 dark:text-blue-400">Rs. {totalAmount.toFixed(2)}</Text>
+              <View className="items-end">
+                <Text className="text-xl font-black text-blue-900 dark:text-blue-400">Rs. {totalAmount.toFixed(2)}</Text>
+                {parsedRedeemed > 0 ? (
+                  <Text className="text-[10px] text-emerald-600 font-bold">Includes Points Discount</Text>
+                ) : null}
+              </View>
             </View>
 
             <View className="border-t border-slate-200 dark:border-gray-700 py-4">

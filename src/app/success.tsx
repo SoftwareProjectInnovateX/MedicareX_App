@@ -24,7 +24,8 @@ export default function SuccessScreen() {
   const htmlContent = useMemo(() => {
     const displayAmount = parsedData.totalAmount || 0;
     const shippingCharge = 400;
-    const subTotal = displayAmount > shippingCharge ? displayAmount - shippingCharge : displayAmount;
+    const redeemedPoints = parsedData.redeemedPoints || 0;
+    const subTotal = parsedData.subtotal || (displayAmount + redeemedPoints - shippingCharge);
     
     const itemsHtml = parsedData.items && parsedData.items.length > 0
       ? parsedData.items.map((item: any) => `
@@ -130,6 +131,12 @@ export default function SuccessScreen() {
               <td class="label">Shipping Charge</td>
               <td class="value">Rs. 400.00</td>
             </tr>
+            ${redeemedPoints > 0 ? `
+            <tr>
+              <td class="label" style="color: #059669;">Loyalty Points Discount</td>
+              <td class="value" style="color: #059669;">- Rs. ${redeemedPoints.toFixed(2)}</td>
+            </tr>
+            ` : ''}
             <tr class="total-row">
               <td class="label total-label">Total Amount</td>
               <td class="value total-value">Rs. ${displayAmount.toFixed(2)}</td>

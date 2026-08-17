@@ -21,7 +21,7 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
+    clientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
     webClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
     androidClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
     iosClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',

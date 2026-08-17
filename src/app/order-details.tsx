@@ -32,6 +32,8 @@ export default function OrderDetailsScreen() {
   const isPrescription = order.type === 'prescription';
   const itemsList = order.items || order.types || order.medications || [];
   const displayAmount = order.totalPrice || order.totalAmount || order.total || 0;
+  const redeemedPoints = order.redeemedPoints || 0;
+  const subtotal = order.subtotal || ((displayAmount > 400) ? displayAmount - 400 + redeemedPoints : displayAmount);
 
   const getStatusColor = (status: string) => {
     const s = status?.toLowerCase() || '';
@@ -222,13 +224,19 @@ export default function OrderDetailsScreen() {
             <View className="flex-row justify-between mb-2">
               <Text className="text-sm text-slate-500">Subtotal</Text>
               <Text className="text-sm font-bold text-slate-600">
-                Rs. {((displayAmount) > 400 ? displayAmount - 400 : displayAmount).toFixed(2)}
+                Rs. {subtotal.toFixed(2)}
               </Text>
             </View>
             <View className="flex-row justify-between mb-3">
               <Text className="text-sm text-slate-500">Shipping Charge</Text>
               <Text className="text-sm font-bold text-slate-600">Rs. 400.00</Text>
             </View>
+            {redeemedPoints > 0 && (
+              <View className="flex-row justify-between mb-3">
+                <Text className="text-sm font-bold text-emerald-600">Loyalty Points Discount</Text>
+                <Text className="text-sm font-bold text-emerald-600">- Rs. {redeemedPoints.toFixed(2)}</Text>
+              </View>
+            )}
             <View className="flex-row justify-between items-center pt-3 border-t border-slate-200 border-dashed">
               <Text className="text-base font-bold text-slate-800">Total Amount</Text>
               <Text className="text-xl font-black text-[#1e3a8a]">Rs. {Number(displayAmount).toFixed(2)}</Text>

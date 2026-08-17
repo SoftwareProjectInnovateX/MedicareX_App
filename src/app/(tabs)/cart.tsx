@@ -129,7 +129,7 @@ export default function CartScreen() {
               <View className="flex-row items-center justify-between mt-2">
                 <TouchableOpacity 
                   className="bg-red-50 px-4 py-3 rounded-lg flex-row items-center"
-                  onPress={() => clearCart()}
+                  onPress={() => clearCart(true)}
                 >
                   <Feather name="trash-2" size={16} color="#ef4444" />
                   <Text className="text-red-500 font-bold ml-2">Clear Cart</Text>

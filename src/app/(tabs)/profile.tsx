@@ -134,6 +134,7 @@ export default function ProfileScreen() {
     { icon: <Feather name="clock" color="#1a87e1" size={24} />, title: 'Order History', subtitle: 'Track your recent orders', route: '/orders' },
     { icon: <Feather name="file-text" color="#1a87e1" size={24} />, title: 'My Prescriptions', subtitle: 'Manage uploaded prescriptions', route: '/prescription' },
     { icon: <Feather name="settings" color="#1a87e1" size={24} />, title: 'Settings', subtitle: 'Notifications, password, etc.', route: '/settings' },
+    { icon: <Feather name="award" color="#1a87e1" size={24} />, title: 'Loyalty & Rewards', subtitle: 'View your points and tiers', route: '/loyalty' },
     { icon: <Feather name="help-circle" color="#1a87e1" size={24} />, title: 'Help & Support', subtitle: 'Contact us or view FAQs', route: '/help' },
   ];
 

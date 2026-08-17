@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
+import { syncPurchasePoints } from '../utils/loyaltySync';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, writeBatch, increment } from 'firebase/firestore';
 import { DISTRICTS_CITIES } from '../constants/locations';
 import * as Crypto from 'expo-crypto';

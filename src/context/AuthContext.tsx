@@ -82,6 +82,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       console.log('Register step 5: setting user doc');
       await setDoc(doc(db, 'users', newUser.uid), savedUserData);
+      console.log('Register step 5.1: setting loyaltyCustomers doc');
+      await setDoc(doc(db, 'loyaltyCustomers', newUser.uid), {
+        uid: newUser.uid,
+        name: fullName,
+        email: email,
+        phone: phone || '',
+        totalSpent: 0,
+        totalPoints: 10,
+        level: 'Silver',
+        joinDate: Timestamp.now(),
+        lastPurchase: Timestamp.now(),
+        purchaseCount: 0,
+        averageOrderValue: 0,
+        refillConsistency: 0,
+        engagementScore: 50,
+        predictedChurnRisk: 20,
+        recommendedOffers: [],
+        updatedAt: Timestamp.now(),
+      });
       console.log('Register step 6: setting async storage');
       await AsyncStorage.setItem('userId',    newUser.uid);
       await AsyncStorage.setItem('userRole',  'customer');

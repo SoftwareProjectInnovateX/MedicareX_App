@@ -4,6 +4,7 @@ import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { db } from '../services/firebase';
+import { syncPurchasePoints } from '../utils/loyaltySync';
 import { collection, addDoc, serverTimestamp, doc, writeBatch, increment, updateDoc } from 'firebase/firestore';
 import { useCartStore } from '../stores/cartStore';
 import { Feather } from '@expo/vector-icons';

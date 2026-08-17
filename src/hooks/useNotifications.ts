@@ -200,6 +200,33 @@ export function useNotificationListener() {
       where('tags', 'array-contains', 'newArrival'),
       where('deleted', '==', false)
     );
+    const qBlogs = query(
+      collection(db, 'blogs'), 
+      where('status', '==', 'PUBLISHED')
+    );
+    const unsubBlogs = onSnapshot(qBlogs, (snap) => {
+      let notifs: any[] = [];
+      snap.docs.forEach(d => {
+        const b = d.data();
+        // Use a generic ID if ID is missing
+        const blogId = d.id || Math.random().toString();
+        // Ensure title exists
+        const titleText = (b.title || 'New Health Article').replace(/\*\*/g, '');
+        notifs.push({
+          id: `blog-${blogId}`,
+          orderId: blogId, // Used by routing potentially
+          title: 'New Health Article',
+          message: `Read our latest article: ${titleText}`,
+          type: 'new_blog',
+          time: b.createdAt ? new Date(b.createdAt).getTime() : Date.now(),
+          icon: 'file-text',
+          color: 'bg-blue-100',
+          iconColor: '#3b82f6'
+        });
+      });
+      updateNotifications('blog-', notifs);
+    });
+
     const unsubNewArrivals = onSnapshot(qNewArrivals, (snap) => {
       let notifs: any[] = [];
       snap.docs.forEach(d => {

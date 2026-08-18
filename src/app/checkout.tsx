@@ -221,6 +221,11 @@ export default function CheckoutScreen() {
           }
 
           await batch.commit();
+
+          if (user?.uid) {
+            await syncPurchasePoints(user.uid, totalAmount);
+          }
+
         clearCart();
         router.replace({
           pathname: '/success' as any,

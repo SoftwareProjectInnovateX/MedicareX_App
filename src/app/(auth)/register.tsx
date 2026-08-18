@@ -3,10 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Scro
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { Feather, AntDesign } from '@expo/vector-icons';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-
-WebBrowser.maybeCompleteAuthSession();
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
@@ -20,24 +17,6 @@ export default function RegisterScreen() {
   const { register, loginWithGoogleCredential } = useAuth();
   const router = useRouter();
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
-    webClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
-    androidClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
-    iosClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
-  });
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const idToken = response.authentication?.idToken || response.params?.id_token;
-      if (idToken) {
-        handleGoogleCredentialLogin(idToken);
-      } else {
-        Alert.alert("Google Login Failed", "Could not get identity token from Google.");
-      }
-    }
-  }, [response]);
-
   const handleGoogleCredentialLogin = async (idToken: string) => {
     setIsLoading(true);
     try {
@@ -50,8 +29,23 @@ export default function RegisterScreen() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    promptAsync();
+  const handleGoogleLogin = async () => {
+    try {
+      GoogleSignin.configure({
+        webClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
+      });
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken;
+      if (idToken) {
+        handleGoogleCredentialLogin(idToken);
+      } else {
+        throw new Error('No ID token present!');
+      }
+    } catch (error: any) {
+      console.error(error);
+      Alert.alert("Google Login Error", error.message);
+    }
   };
 
   const handlePhoneChange = (text: string) => {
@@ -215,9 +209,9 @@ export default function RegisterScreen() {
             </View>
 
             <TouchableOpacity 
-              className="flex-row items-center justify-center border border-gray-300 rounded-xl py-4 mb-4 bg-white shadow-sm"
+              className="flex-row items-center justify-center border border-gray-300 rounded-xl py-4 mb-6 bg-white shadow-sm"
               onPress={handleGoogleLogin}
-              disabled={isLoading || !request}
+              disabled={isLoading}
             >
               <Image source={require('../../../assets/images/google-icon.png')} style={{ width: 22, height: 22 }} resizeMode="contain" />
               <Text className="text-gray-800 font-bold ml-3 text-[15px]">Sign in with Google</Text>

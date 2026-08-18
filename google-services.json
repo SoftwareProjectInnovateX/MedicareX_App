@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "109245280482",
+    "project_id": "supplier-management-70b81",
+    "storage_bucket": "supplier-management-70b81.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109245280482:android:f56100e104366917f36ebb",
+        "android_client_info": {
+          "package_name": "com.medicarex.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "109245280482-c9dtr2tuo0qvj9lukrfk2nga45bi1j3k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.medicarex.app",
+            "certificate_hash": "344a1493b2e426bc6d7585b83b55a4539f9e3a70"
+          }
+        },
+        {
+          "client_id": "109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6dyQ1--okXpK9I5kUT-M1y1vRsKQfvbY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -13,8 +13,8 @@ interface NotificationStore {
   setNotifications: (notifs: any[]) => void;
   updateNotifications: (prefix: string, notifs: any[]) => void;
   markAsRead: () => void;
-  clearNotifications: () => Promise<void>;
-  initLastViewed: () => Promise<void>;
+  clearNotifications: (userId?: string) => Promise<void>;
+  initLastViewed: (userId?: string) => Promise<void>;
 }
 
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
@@ -119,7 +119,7 @@ export function useNotificationListener() {
       let notifs: any[] = [];
       snap.docs.forEach(d => {
         const o = d.data();
-        if (o.orderStatus === 'Delivered') {
+        if (o.orderStatus?.toLowerCase() === 'delivered') {
           notifs.push({
             id: `ord-del-${d.id}`,
             orderId: d.id,
@@ -131,7 +131,7 @@ export function useNotificationListener() {
             color: 'bg-blue-100',
             iconColor: '#3b82f6'
           });
-        } else if (o.orderStatus === 'Out for Delivery') {
+        } else if (o.orderStatus?.toLowerCase() === 'out for delivery') {
           notifs.push({
             id: `ord-out-${d.id}`,
             orderId: d.id,
@@ -142,6 +142,30 @@ export function useNotificationListener() {
             icon: 'truck',
             color: 'bg-amber-100',
             iconColor: '#f59e0b'
+          });
+        } else if (o.orderStatus?.toLowerCase() === 'completed') {
+          notifs.push({
+            id: `ord-comp-${d.id}`,
+            orderId: d.id,
+            title: 'Order Completed',
+            message: `Your order #${d.id.slice(-6)} is completed and ready for delivery.`,
+            type: 'order_completed',
+            time: o.createdAt?.seconds * 1000 || Date.now(),
+            icon: 'check-circle',
+            color: 'bg-emerald-100',
+            iconColor: '#10b981'
+          });
+        } else if (o.orderStatus?.toLowerCase() === 'approved' || o.orderStatus?.toLowerCase() === 'processing') {
+          notifs.push({
+            id: `ord-app-${d.id}`,
+            orderId: d.id,
+            title: 'Order Approved',
+            message: `Your order #${d.id.slice(-6)} has been approved by the pharmacist.`,
+            type: 'order_approved',
+            time: o.createdAt?.seconds * 1000 || Date.now(),
+            icon: 'check-square',
+            color: 'bg-green-100',
+            iconColor: '#22c55e'
           });
         }
       });
@@ -246,12 +270,34 @@ export function useNotificationListener() {
       updateNotifications('new-arr-', notifs);
     });
 
+    const qBrands = query(collection(db, 'brands'));
+    const unsubBrands = onSnapshot(qBrands, (snap) => {
+      let notifs: any[] = [];
+      snap.docs.forEach(d => {
+        const b = d.data();
+        notifs.push({
+          id: `new-brand-${d.id}`,
+          orderId: d.id, 
+          title: 'New Brand Added!',
+          message: `${b.name} is now available in our catalog. Explore their products!`,
+          type: 'new_brand',
+          time: b.createdAt?.seconds * 1000 || Date.now(),
+          icon: 'tag',
+          color: 'bg-purple-100',
+          iconColor: '#9333ea'
+        });
+      });
+      updateNotifications('new-brand-', notifs);
+    });
+
     return () => {
       unsubPres();
       unsubOrders();
       unsubReturns();
       unsubChat();
       unsubNewArrivals();
+      unsubBlogs();
+      unsubBrands();
     };
   }, [user]);
 }

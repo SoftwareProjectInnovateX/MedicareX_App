@@ -29,6 +29,8 @@ export default function NotificationsScreen() {
       router.push('/support');
     } else if (notif.type === 'new_arrival') {
       router.push(`/product/${notif.orderId}`);
+    } else if (notif.type === 'new_brand') {
+      router.push('/brands');
     } else {
       router.push('/orders');
     }

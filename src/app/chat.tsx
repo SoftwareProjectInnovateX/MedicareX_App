@@ -19,34 +19,7 @@ const prescriptionDrugs = [
   'sergey',
 ];
 
-const baseSystemPrompt = `
-You are a highly intelligent health assistant and store agent for "MediCareX Pharmacy".
 
-CORE CAPABILITIES:
-1. Medical Advice: Provide WHO-backed health advice.
-2. Store Inventory: Check the CURRENT STORE INVENTORY (provided at the bottom) to answer availability and price questions.
-
-RULES FOR STORE INVENTORY:
-- When a user asks about a product (e.g., "do you have panadol?", "panadol thiyanawadha?"), check the CURRENT STORE INVENTORY list.
-- Tolerate minor spelling mistakes.
-- If the product is IN STOCK, tell the user it is available, mention the exact stock amount, and the price.
-- If OUT OF STOCK, apologize and say it is currently unavailable.
-- If NOT LISTED, inform the user that you don't carry that product.
-- IMPORTANT: When answering a product inquiry, ONLY provide the availability, stock, and price. Keep it extremely short and direct. Do NOT add extra medical advice, warnings, or WHO guidelines unless specifically asked.
-
-RULES FOR MEDICAL ADVICE:
-- ONLY provide advice based on WHO guidelines. If no guidance, politely decline.
-- NEVER recommend prescription drugs. State clearly that a prescription is required.
-- You MAY recommend OTC items (e.g., Paracetamol, vitamins).
-- ALWAYS append this to medical advice: "⚕️ This is general health information only. Not a substitute for professional medical advice."
-
-LANGUAGE RULE (CRITICAL):
-- You MUST respond in the EXACT SAME language as the user.
-- If the user types in English, reply in English.
-- If the user types in Sinhala script or Singlish (Romanized Sinhala), reply in simple, clear, and natural conversational Sinhala (e.g., "ඔව්, අපේ ළඟ Panadol තියෙනවා. තොග 10ක් තියෙනවා. මිල රු.100යි.").
-- Do NOT use complex or robotic grammatical Sinhala words. Use common, spoken everyday Sinhala words.
-- NEVER reply in English if the user asked in Sinhala/Singlish.
-`;
 const BouncingDots = () => {
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
@@ -115,42 +88,13 @@ export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const colorScheme = useColorScheme();
-  const [catalogContext, setCatalogContext] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     loadChatHistory();
-    fetchCatalog();
   }, []);
 
-  const fetchCatalog = async () => {
-    try {
-      const q = query(collection(db, 'pharmacistProducts'), where('visibility', '==', 'customer'));
-      const snapshot = await getDocs(q);
-      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
 
-      const stockSnap = await getDocs(collection(db, 'products'));
-      const stockMap: Record<string, number> = {};
-      stockSnap.forEach(doc => {
-        const d = doc.data();
-        const s = typeof d.stock === 'number' && !isNaN(d.stock) ? d.stock : 0;
-        if (stockMap[doc.id] === undefined) stockMap[doc.id] = s;
-        if (d.productCode) stockMap[d.productCode] = s;
-      });
-
-      let catalogStr = "\n\n--- CURRENT STORE INVENTORY ---\n";
-      items.forEach(item => {
-        const stock = stockMap[item.stockId] ?? stockMap[item.productCode] ?? stockMap[item.id] ?? 0;
-        const price = item.retailPrice ?? item.price ?? 0;
-        const pName = item.name ?? item.productName ?? 'Unknown';
-        catalogStr += `[Product: ${pName} | Stock: ${stock} | Price: Rs.${price}]\n`;
-      });
-
-      setCatalogContext(catalogStr);
-    } catch (err) {
-      console.error("Error fetching catalog context", err);
-    }
-  };
 
   const loadChatHistory = async () => {
     try {
@@ -261,43 +205,88 @@ export default function ChatScreen() {
         return;
       }
 
+      let productContext = '';
+      try {
+        const availKeywords = [
+          'thiyanawada', 'thiyenawada', 'tiyanawada', 'tiyenawada',
+          'thiyanavada', 'thiyenavada', 'tiyanavada', 'tiyenavada',
+          'thiyanawadha', 'tiyeda', 'thiyeda',
+          'have', 'available', 'stock', 'sell', 'is there', 'are there', 'do you have'
+        ];
+        const hasAvailKeyword = availKeywords.some(k => messageLower.includes(k));
+        
+        if (hasAvailKeyword) {
+          const productsRes = await fetch(`${API_BASE}/products`);
+          if (productsRes.ok) {
+            const products = await productsRes.json();
+            const matchedProduct = products.find((p: any) => {
+              if (!p.name) return false;
+              const words = p.name.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+              return words.length > 0 && words.some((w: string) => messageLower.includes(w));
+            });
+            if (matchedProduct) {
+              productContext = `SYSTEM ALERT: The user is asking about the availability of the product '${matchedProduct.name}'. We DO have it in stock. Current stock quantity: ${matchedProduct.stock}. Price per unit: Rs. ${matchedProduct.price}. Inform the user about this availability, stock, and price naturally in the language they used.`;
+            }
+          }
+        }
+      } catch (e) {
+        console.log("Failed to check product catalog", e);
+      }
+
       const history = updatedMessages
         .slice(1) // skip welcome message
         .slice(0, -1) // skip current message
-        .map((msg) => ({ 
-          role: msg.role === 'user' ? 'user' : 'assistant', 
-          content: msg.text 
-        }));
+        .map((msg) => ({ role: msg.role === 'user' ? 'user' : 'assistant', content: msg.text }));
 
-      const groqMessages = [
-        { role: 'system', content: baseSystemPrompt + catalogContext },
+      const systemPrompt = `
+You are a health assistant for MediCareX pharmacy.
+
+RULES — follow strictly:
+1. For general health and first aid advice, follow WHO (World Health Organization) guidelines only.
+   For OTC product advice, you may also refer to NHS (UK National Health Service) and FDA (US Food & Drug Administration) guidelines.
+   If none of these sources have guidance on a topic, say: "I don't have verified information on that. Please consult a doctor."
+2. NEVER recommend or mention prescription drugs.
+   If asked, say: "That requires a prescription. Please consult a licensed doctor."
+3. You CAN recommend OTC products approved by WHO, NHS, or FDA: Paracetamol, Ibuprofen, antacids, antihistamines, vitamins, baby care items.
+4. Always end responses with:
+   "⚕️ This is general health information only. Not a substitute for professional medical advice." (Translate this to Sinhala if replying in Sinhala).
+5. If symptoms sound life-threatening (chest pain, difficulty breathing), say:
+   "This sounds serious. Please call emergency services or go to a hospital immediately."
+6. Formatting rules:
+   - NEVER use markdown tables.
+   - Limit responses to 2-3 short sentences (a single clean paragraph).
+   - Use simple bullet points (maximum 3, if necessary) rather than dense headers or multi-section checklists.
+   - Keep the language conversational, brief, and suitable for a compact chat interface.
+7. Language rules:
+   - If the user asks in Sinhala script OR Singlish (Sinhala words written with English alphabet), you MUST reply entirely in the Sinhala language.
+   - If the user asks in English, you MUST reply entirely in English.
+`;
+
+      const messages = [
+        { role: 'system', content: systemPrompt },
         ...history,
-        { role: 'user', content: userMessage }
+        { role: 'user', content: productContext ? `${productContext}\n\nUser Message: ${userMessage}` : userMessage },
       ];
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const groqApiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`
+          Authorization: `Bearer ${groqApiKey}`,
         },
-        body: JSON.stringify({ 
-          model: 'llama-3.3-70b-versatile',
-          messages: groqMessages,
+        body: JSON.stringify({
+          model: 'openai/gpt-oss-20b',
+          messages,
           max_tokens: 500,
         }),
-        signal: controller.signal,
       });
-      
-      clearTimeout(timeoutId);
 
       if (!response.ok) throw new Error("Chat failed");
 
       const data = await response.json();
-      const botReply = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+      const botReply = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
       
       const finalMessages: Message[] = [...updatedMessages, { role: "bot", text: botReply }];
       setMessages(finalMessages);

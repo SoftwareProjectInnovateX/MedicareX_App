@@ -247,6 +247,10 @@ export default function RxCheckoutScreen() {
 
         await batch.commit();
 
+        if (user?.uid) {
+          await syncPurchasePoints(user.uid, totalAmount);
+        }
+
         const dispensePayload = {
           rxId: rxId,
           patientName: orderData.customerName,

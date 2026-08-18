@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, db } from "../services/firebase";
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 interface AuthContextType {
   user: User | null;

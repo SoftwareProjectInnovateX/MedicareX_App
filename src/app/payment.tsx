@@ -122,6 +122,11 @@ export default function PaymentScreen() {
             createdAt: serverTimestamp(),
           });
           await batch.commit();
+
+          if (parsedOrderData.userId && parsedOrderData.userId !== 'guest') {
+            await syncPurchasePoints(parsedOrderData.userId, parsedOrderData.totalAmount);
+          }
+
           clearCart();
         }
 

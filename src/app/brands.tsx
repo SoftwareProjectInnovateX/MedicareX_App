@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Linking, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Linking, useColorScheme, Image, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Globe, Tag, CheckCircle, Search, Bot, Verified, Lightbulb, ExternalLink, Stethoscope, Pill } from 'lucide-react-native';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../services/firebase';
 
-const API_BASE = 'http://10.207.127.9:5000/api';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://10.17.110.9:5000/api';
 
 const globalBrandCatalog = [
   { name: 'Pfizer', category: 'Vaccines & respiratory', tagline: 'Leading global vaccine and wellness manufacturer', external: true },
@@ -73,15 +75,18 @@ export default function BrandsScreen() {
   const [recommendation, setRecommendation] = useState({ title: '', summary: '', brands: [] as any[] });
   const [topic, setTopic] = useState('');
   const [factIndex, setFactIndex] = useState(0);
+  const [selectedBrand, setSelectedBrand] = useState<any>(null);
 
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const res = await fetch(`${API_BASE}/brands`);
-        const data = await res.json();
-        setBrands(Array.isArray(data) ? data : []);
+        const brandsRef = collection(db, 'brands');
+        const q = query(brandsRef, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setBrands(data);
       } catch (err) {
-        console.error('Failed to fetch brands:', err);
+        console.error('Failed to fetch brands from Firebase:', err);
       }
     };
     fetchBrands();
@@ -155,18 +160,29 @@ export default function BrandsScreen() {
   };
 
   const BrandCard = ({ brand }: { brand: any }) => (
-    <View className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 border border-[#e5e7eb] dark:border-gray-700 shadow-sm">
+    <TouchableOpacity 
+      activeOpacity={0.7} 
+      onPress={() => setSelectedBrand(brand)}
+      className="bg-white dark:bg-gray-800 rounded-2xl p-4 mb-4 border border-[#e5e7eb] dark:border-gray-700 shadow-sm"
+    >
       <View className="flex-row justify-between items-start">
+        {brand.imageUrl && (
+          <Image 
+            source={{ uri: brand.imageUrl }} 
+            className="w-16 h-16 rounded-xl mr-3 bg-gray-100" 
+            resizeMode="cover" 
+          />
+        )}
         <View className="flex-1">
           <Text className="text-xs uppercase font-bold text-accent mb-1">{brand.category || 'Health brand'}</Text>
           <Text className="text-lg font-bold text-textPrimary dark:text-white">{brand.name}</Text>
           <Text className="text-sm text-textSecondary dark:text-gray-300 mt-1">{brand.tagline || brand.description?.slice(0, 65)}</Text>
         </View>
-        <View className={`px-2 py-1 rounded-full ${brand.external ? 'bg-blue-100' : 'bg-green-100'}`}>
-          <Text className={`text-[10px] font-bold ${brand.external ? 'text-blue-700' : 'text-green-700'}`}>
-            {brand.external ? 'Global' : 'Local'}
-          </Text>
-        </View>
+        {brand.external && (
+          <View className="px-2 py-1 rounded-full bg-blue-100">
+            <Text className="text-[10px] font-bold text-blue-700">Global</Text>
+          </View>
+        )}
       </View>
       {brand.external && brandUrls[brand.name] && (
         <TouchableOpacity 
@@ -177,7 +193,7 @@ export default function BrandsScreen() {
           <Text className="text-accent font-semibold ml-1 text-xs">Visit official site</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -361,6 +377,83 @@ export default function BrandsScreen() {
         )}
 
       </ScrollView>
+
+      {/* BRAND DETAILS MODAL */}
+      <Modal
+        visible={!!selectedBrand}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setSelectedBrand(null)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white dark:bg-gray-900 rounded-t-3xl p-6 min-h-[50%]">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-2xl font-bold text-textPrimary dark:text-white flex-1">{selectedBrand?.name}</Text>
+              <TouchableOpacity onPress={() => setSelectedBrand(null)} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
+                <Feather name="x" size={20} color={colorScheme === 'dark' ? '#fff' : '#000'} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {selectedBrand?.imageUrl && (
+                <Image 
+                  source={{ uri: selectedBrand.imageUrl }} 
+                  className="w-full h-48 rounded-2xl mb-4 bg-gray-100" 
+                  resizeMode="cover" 
+                />
+              )}
+              
+              {selectedBrand?.category && (
+                <View className="bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg self-start mb-4">
+                  <Text className="text-blue-700 dark:text-blue-300 font-bold text-xs uppercase">{selectedBrand.category}</Text>
+                </View>
+              )}
+
+              {selectedBrand?.tagline && (
+                <Text className="text-lg font-semibold text-textPrimary dark:text-gray-200 mb-4 italic">"{selectedBrand.tagline}"</Text>
+              )}
+
+              {selectedBrand?.description && (
+                <View className="mb-4">
+                  <Text className="text-sm font-bold text-textPrimary dark:text-white mb-1">About</Text>
+                  <Text className="text-sm text-textSecondary dark:text-gray-400 leading-6">{selectedBrand.description}</Text>
+                </View>
+              )}
+
+              <View className="flex-row flex-wrap mt-2">
+                {selectedBrand?.country && (
+                  <View className="w-1/2 mb-3">
+                    <Text className="text-xs text-textMuted font-semibold uppercase">Country</Text>
+                    <Text className="text-sm font-bold text-textPrimary dark:text-white mt-0.5">{selectedBrand.country}</Text>
+                  </View>
+                )}
+                {selectedBrand?.established && selectedBrand.established > 0 && (
+                  <View className="w-1/2 mb-3">
+                    <Text className="text-xs text-textMuted font-semibold uppercase">Established</Text>
+                    <Text className="text-sm font-bold text-textPrimary dark:text-white mt-0.5">{selectedBrand.established}</Text>
+                  </View>
+                )}
+                {selectedBrand?.products && selectedBrand.products > 0 && (
+                  <View className="w-1/2 mb-3">
+                    <Text className="text-xs text-textMuted font-semibold uppercase">Products</Text>
+                    <Text className="text-sm font-bold text-textPrimary dark:text-white mt-0.5">{selectedBrand.products}</Text>
+                  </View>
+                )}
+              </View>
+
+              {selectedBrand?.external && brandUrls[selectedBrand?.name] && (
+                <TouchableOpacity 
+                  className="mt-6 bg-accent py-4 rounded-xl flex-row justify-center items-center"
+                  onPress={() => Linking.openURL(brandUrls[selectedBrand.name])}
+                >
+                  <Text className="text-white font-bold text-base mr-2">Visit Official Site</Text>
+                  <ExternalLink size={16} color="#fff" />
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

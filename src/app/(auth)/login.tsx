@@ -42,11 +42,14 @@ export default function LoginScreen() {
     }
   };
 
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
+    });
+  }, []);
+
   const handleGoogleLogin = async () => {
     try {
-      GoogleSignin.configure({
-        webClientId: '109245280482-unku2vvkm9qbgfjrig2jq7rfu2vqrv0m.apps.googleusercontent.com',
-      });
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo.data?.idToken;
